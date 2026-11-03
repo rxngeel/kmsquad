@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useMeshtastic } from "./hooks/useMeshtastic";
 import { ConnectPanel } from "./components/ConnectPanel";
+import { MapView } from "./components/MapView";
 import { RadioConfigPanel } from "./components/RadioConfigPanel";
 import { NodeListPanel } from "./components/NodeListPanel";
 import { PositionPanel } from "./components/PositionPanel";
@@ -31,7 +32,7 @@ export default function App() {
         KMS<span style={{ color: "var(--volt)" }}>SQUAD</span>
       </h1>
       <p style={{ color: "var(--text-dim)", fontSize: "0.85rem", marginTop: -8, marginBottom: 16 }}>
-        Fase 1 — prova de conceito
+        Fase 2 — mapa e squad (em andamento)
       </p>
 
       {debugOpen ? (
@@ -41,6 +42,7 @@ export default function App() {
           <ConnectPanel state={state} onConnect={connect} />
           {connected && (
             <>
+              <MapView state={state} />
               <RadioConfigPanel state={state} />
               <NodeListPanel state={state} />
               <PositionPanel state={state} sendPhonePosition={sendPhonePosition} />

@@ -220,6 +220,19 @@ export class MeshtasticConnection {
       time: Math.floor(Date.now() / 1000),
     });
     await this.device.setPosition(position);
+
+    // Atualiza o próprio nó no mapa imediatamente, sem esperar o rádio
+    // retransmitir a posição de volta pela mesh (isso pode demorar).
+    if (this.state.myNodeNum !== undefined) {
+      const nodes = new Map(this.state.nodes);
+      const existing = nodes.get(this.state.myNodeNum);
+      nodes.set(this.state.myNodeNum, {
+        ...(existing ?? create(Protobuf.Mesh.NodeInfoSchema, { num: this.state.myNodeNum })),
+        position,
+      });
+      this.setState({ nodes });
+    }
+
     this.log(`Posição do celular enviada: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
   }
 

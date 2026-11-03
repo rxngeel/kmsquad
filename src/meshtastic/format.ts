@@ -87,6 +87,11 @@ export function gpsConfigMismatch(
   );
 }
 
+/** Rótulo curto pra marcador no mapa: numeral/callsign (shortName) ou nome completo. */
+export function labelFor(node: { num: number; user?: Protobuf.Mesh.User }): string {
+  return node.user?.shortName || node.user?.longName || `#${node.num}`;
+}
+
 export function formatLatLon(latitudeI?: number, longitudeI?: number): string {
   if (latitudeI === undefined || longitudeI === undefined) return "sem posição";
   const lat = latitudeI / 1e7;
