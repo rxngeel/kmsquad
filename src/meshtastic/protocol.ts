@@ -11,9 +11,8 @@ export const MessageType = {
 
 export const PlayerStatus = {
   VIVO: 0,
-  HIT: 1,
-  MEDIC: 2,
-  RESPAWN: 3,
+  SANGRANDO: 1,
+  MORTO: 2,
 } as const;
 export type PlayerStatusValue = (typeof PlayerStatus)[keyof typeof PlayerStatus];
 

@@ -30,11 +30,106 @@ body {
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 100svh;
+}
+
+/* Tela de configuração (antes de conectar, debug) — formato de coluna, centralizado. */
+.setup-screen {
+  min-height: 100svh;
   max-width: 640px;
   margin: 0 auto;
   padding: 16px;
   padding-bottom: 48px;
+}
+
+/* HUD em jogo — mapa em tela cheia, pensado pra uso com o celular na horizontal. */
+.hud-shell {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.hud-shell .map-wrap,
+.hud-shell .map-view {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  border: none;
+  margin: 0;
+}
+
+.hud-topbar {
+  position: absolute;
+  z-index: 1000;
+  top: env(safe-area-inset-top, 0px);
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  pointer-events: none;
+}
+
+.hud-topbar > * {
+  pointer-events: auto;
+}
+
+.hud-clock {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: rgba(10, 10, 10, 0.7);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.hud-menu-btn {
+  margin-left: auto;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 1.3rem;
+  border-radius: 6px;
+  background: rgba(10, 10, 10, 0.7);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.hud-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.hud-drawer {
+  position: fixed;
+  z-index: 1101;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 92vw);
+  overflow-y: auto;
+  background: var(--bg);
+  border-left: 1px solid var(--line);
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.hud-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.hud-drawer-header button {
+  width: auto;
+  min-height: 36px;
+  padding: 6px 14px;
 }
 
 h1, h2, h3, h4 {
@@ -126,35 +221,26 @@ button.secondary {
 .badge.danger { background: var(--danger); color: #0a0a0a; }
 .badge.neutral { background: var(--line); color: var(--text-dim); }
 
-.status-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.status-btn {
-  min-height: 64px;
+/* Botão flutuante único de status — cicla VIVO → SANGRANDO → MORTO a cada toque. */
+.status-fab {
+  position: absolute;
+  z-index: 1000;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: auto;
+  min-width: 140px;
+  min-height: 56px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border-width: 3px;
   font-size: 1.1rem;
-  border-width: 2px;
-  background: transparent;
-  opacity: 0.55;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
-.status-btn--active {
-  opacity: 1;
-}
-
-.status-btn--ok { border-color: var(--ok); color: var(--ok); }
-.status-btn--ok.status-btn--active { background: var(--ok); color: #0a0a0a; }
-
-.status-btn--danger { border-color: var(--danger); color: var(--danger); }
-.status-btn--danger.status-btn--active { background: var(--danger); color: #0a0a0a; }
-
-.status-btn--warn { border-color: var(--volt); color: var(--volt); }
-.status-btn--warn.status-btn--active { background: var(--volt); color: #0a0a0a; }
-
-.status-btn--neutral { border-color: var(--line); color: var(--text-dim); }
-.status-btn--neutral.status-btn--active { background: var(--line); color: var(--text); }
+.status-fab--ok { border-color: var(--ok); background: var(--ok); color: #0a0a0a; }
+.status-fab--danger { border-color: var(--danger); background: var(--danger); color: #0a0a0a; }
+.status-fab--neutral { border-color: var(--line); background: var(--bg-panel-raised); color: var(--text-dim); }
 
 .node-card {
   background: var(--bg-panel-raised);
@@ -239,7 +325,7 @@ select {
 
 .map-layer-switch {
   position: absolute;
-  top: 10px;
+  top: calc(56px + env(safe-area-inset-top, 0px));
   right: 10px;
   z-index: 1000;
   display: flex;
@@ -290,22 +376,17 @@ select {
 }
 
 /* status prevalece sobre a cor de "sou eu" — saber quem foi atingido importa mais */
-.map-marker--hit {
+.map-marker--sangrando {
   border-color: var(--danger);
   background: var(--danger);
   color: #0a0a0a;
 }
 
-.map-marker--medic {
-  border-color: var(--volt);
-  background: transparent;
-  color: var(--volt);
-}
-
-.map-marker--respawn {
+.map-marker--morto {
   border-color: var(--line);
   background: var(--line);
   color: var(--text-dim);
+  opacity: 0.6;
 }
 
 .map-marker--stale {

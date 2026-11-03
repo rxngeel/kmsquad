@@ -3,17 +3,24 @@ import { PlayerStatus, type PlayerStatusValue } from "./protocol";
 
 const STATUS_LABELS: Record<PlayerStatusValue, string> = {
   [PlayerStatus.VIVO]: "VIVO",
-  [PlayerStatus.HIT]: "HIT",
-  [PlayerStatus.MEDIC]: "MEDIC",
-  [PlayerStatus.RESPAWN]: "RESPAWN",
+  [PlayerStatus.SANGRANDO]: "SANGRANDO",
+  [PlayerStatus.MORTO]: "MORTO",
 };
 
 const STATUS_BADGE_CLASS: Record<PlayerStatusValue, string> = {
   [PlayerStatus.VIVO]: "ok",
-  [PlayerStatus.HIT]: "danger",
-  [PlayerStatus.MEDIC]: "warn",
-  [PlayerStatus.RESPAWN]: "neutral",
+  [PlayerStatus.SANGRANDO]: "danger",
+  [PlayerStatus.MORTO]: "neutral",
 };
+
+const STATUS_ORDER: PlayerStatusValue[] = [PlayerStatus.VIVO, PlayerStatus.SANGRANDO, PlayerStatus.MORTO];
+
+/** Pro botão flutuante de status: qual status vem depois ao tocar (cicla). */
+export function nextStatus(status: PlayerStatusValue | undefined): PlayerStatusValue {
+  const current = status ?? PlayerStatus.VIVO;
+  const index = STATUS_ORDER.indexOf(current);
+  return STATUS_ORDER[(index + 1) % STATUS_ORDER.length];
+}
 
 export function statusLabel(status: PlayerStatusValue | undefined): string {
   return status !== undefined ? STATUS_LABELS[status] : "VIVO";

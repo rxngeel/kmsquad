@@ -49,8 +49,14 @@ bytes 2..N   dados específicos do tipo
 ```
 byte 0   versão
 byte 1   0x01 (STATUS)
-byte 2   status: 0=VIVO, 1=HIT, 2=MEDIC, 3=RESPAWN
+byte 2   status: 0=VIVO, 1=SANGRANDO, 2=MORTO
 ```
+
+Simplificado de 4 pra 3 estados (era VIVO/HIT/MEDIC/RESPAWN) — MEDIC e
+RESPAWN não faziam sentido como status do próprio jogador; "sangrando"
+cobre o período entre ser atingido e ser revivido ou "morrer", e "morto"
+cobre o resto até o respawn. Botão flutuante único no HUD cicla entre os
+três a cada toque (VIVO → SANGRANDO → MORTO → VIVO...).
 
 Mandado quando o jogador toca pra trocar de status. O jogador (de quem é
 o status) já vem no cabeçalho do pacote Meshtastic (`MeshPacket.from`),

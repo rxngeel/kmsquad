@@ -55,7 +55,10 @@ export function MapView({ state }: Props) {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const map = L.map(containerRef.current, { zoomControl: true }).setView(DEFAULT_CENTER, 16);
+    // zoomControl no canto inferior esquerdo: o canto superior fica ocupado
+    // pela barra do HUD (status da conexão, relógio, menu).
+    const map = L.map(containerRef.current, { zoomControl: false }).setView(DEFAULT_CENTER, 16);
+    L.control.zoom({ position: "bottomleft" }).addTo(map);
     mapRef.current = map;
 
     return () => {
@@ -100,9 +103,8 @@ export function MapView({ state }: Props) {
         className: [
           "map-marker",
           isSelf && "map-marker--self",
-          status === PlayerStatus.HIT && "map-marker--hit",
-          status === PlayerStatus.MEDIC && "map-marker--medic",
-          status === PlayerStatus.RESPAWN && "map-marker--respawn",
+          status === PlayerStatus.SANGRANDO && "map-marker--sangrando",
+          status === PlayerStatus.MORTO && "map-marker--morto",
           stale && "map-marker--stale",
         ]
           .filter(Boolean)
