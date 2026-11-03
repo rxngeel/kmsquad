@@ -43,6 +43,7 @@ bytes 2..N   dados específicos do tipo
 | `0x01` | STATUS | 3 bytes |
 | `0x02` | MARKER | 12 bytes |
 | `0x03` | DIRECTION | 3 bytes |
+| `0x04` | REMOVE_MARKER | 3 bytes |
 
 ### `0x01` STATUS — status do jogador
 
@@ -93,6 +94,22 @@ Só é mandado se o jogador tiver a bússola **ativada** (é opt-out, ver
 Interface no `CLAUDE.md`). 1 byte é resolução suficiente pra desenhar uma
 seta no mapa — não precisa de mais precisão que isso pro caso de uso.
 
+### `0x04` REMOVE_MARKER — remover marcador
+
+```
+byte 0   versão
+byte 1   0x04 (REMOVE_MARKER)
+byte 2   id do marcador a remover (0–255)
+```
+
+O autor vem do cabeçalho Meshtastic (`MeshPacket.from`), igual ao MARKER —
+por isso um cliente só aceita a remoção se o `from` do pacote bater com o
+autor do marcador que ele tem guardado (a chave interna é `autor:id`).
+Isso evita que outro jogador remova um marcador que não é dele (mesmo que
+por acidente, mandando um id que coincide). Na UI, o botão "Remover" só
+aparece pro próprio autor; marcador de outro jogador mostra as infos mas
+sem opção de remover.
+
 ## Tamanho e airtime
 
 Com esses tamanhos (3 a 12 bytes de payload), mesmo no preset mais lento
@@ -104,7 +121,6 @@ muda o suficiente), cabem confortavelmente no orçamento.
 
 ## Evoluções futuras (não implementadas ainda)
 
-- Tipo pra "remover marcador" (id + autor).
 - Mensagens rápidas pré-definidas ("PRECISO DE APOIO" etc. — fase
-  "Depois" do roadmap): provavelmente um tipo novo `0x04` com 1 byte de
+  "Depois" do roadmap): provavelmente um tipo novo `0x05` com 1 byte de
   índice pra uma lista fixa de frases.

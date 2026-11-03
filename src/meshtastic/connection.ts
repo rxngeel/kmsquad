@@ -7,6 +7,7 @@ import {
   decodeMessage,
   encodeDirection,
   encodeMarker,
+  encodeRemoveMarker,
   encodeStatus,
   type MarkerTypeValue,
   type PlayerStatusValue,
@@ -270,6 +271,16 @@ export class MeshtasticConnection {
             this.setState({ headings });
             break;
           }
+          case "remove_marker": {
+            // o id é escopado por quem mandou (packet.from) — só remove o
+            // marcador do próprio autor, nunca de outra pessoa.
+            const markers = new Map(this.state.markers);
+            if (markers.delete(`${packet.from}:${decoded.id}`)) {
+              this.setState({ markers });
+              this.log(`Marcador de #${packet.from} removido.`);
+            }
+            break;
+          }
           case "desconhecido":
             this.log(`[protocolo] tipo de mensagem desconhecido (0x${decoded.messageType.toString(16)}) de #${packet.from}`);
             break;
@@ -354,6 +365,18 @@ export class MeshtasticConnection {
     }
     await this.sendRawPacket(encodeMarker({ type, id, latitudeI, longitudeI }));
     this.log(`Marcador tipo ${type} criado.`);
+  }
+
+  /** Remove um marcador que você mesmo criou (só funciona pro seu próprio — ver docs/protocolo.md). */
+  async removeMarker(id: number): Promise<void> {
+    if (!this.device) return;
+    if (this.state.myNodeNum !== undefined) {
+      const markers = new Map(this.state.markers);
+      markers.delete(`${this.state.myNodeNum}:${id}`);
+      this.setState({ markers });
+    }
+    await this.sendRawPacket(encodeRemoveMarker(id));
+    this.log(`Marcador ${id} removido.`);
   }
 
   /** Avisa o squad da direção pra onde o jogador tá virado (bússola). Chamado com throttle pelo hook de bússola. */

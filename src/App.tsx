@@ -27,6 +27,7 @@ export default function App() {
     setPositionSettings,
     setIdentity,
     sendMarker,
+    removeMarker,
     sendDirection,
   } = useMeshtastic();
   const [debugOpen, setDebugOpen] = useState(false);
@@ -77,7 +78,7 @@ export default function App() {
 
   return (
     <div className="hud-shell">
-      <MapView state={state} sendMarker={sendMarker} />
+      <MapView state={state} sendMarker={sendMarker} removeMarker={removeMarker} />
       <div className="hud-frame" />
 
       <div className="hud-topbar">

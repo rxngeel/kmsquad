@@ -60,9 +60,10 @@ function markerVisual(type: MarkerTypeValue) {
 interface Props {
   state: MeshState;
   sendMarker: (type: MarkerTypeValue, latitudeI: number, longitudeI: number) => Promise<void>;
+  removeMarker: (id: number) => Promise<void>;
 }
 
-export function MapView({ state, sendMarker }: Props) {
+export function MapView({ state, sendMarker, removeMarker }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef(new Map<number, L.Marker>());
@@ -72,6 +73,7 @@ export function MapView({ state, sendMarker }: Props) {
   const [baseLayerId, setBaseLayerId] = useState<BaseLayerId>("relevo");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [placingType, setPlacingType] = useState<MarkerTypeValue | null>(null);
+  const [selectedMarkerKey, setSelectedMarkerKey] = useState<string | null>(null);
   const placingTypeRef = useRef<MarkerTypeValue | null>(null);
   placingTypeRef.current = placingType;
   const sendMarkerRef = useRef(sendMarker);
@@ -208,8 +210,10 @@ export function MapView({ state, sendMarker }: Props) {
       const existing = pinsRef.current.get(key);
       if (existing) {
         existing.setLatLng([lat, lon]);
+        existing.setIcon(icon);
       } else {
         const leafletMarker = L.marker([lat, lon], { icon, title: visual.label }).addTo(map);
+        leafletMarker.on("click", () => setSelectedMarkerKey(key));
         pinsRef.current.set(key, leafletMarker);
       }
     }
@@ -227,7 +231,17 @@ export function MapView({ state, sendMarker }: Props) {
     setPlacingType(type);
   }
 
+  async function handleRemoveSelected() {
+    if (!selectedMarkerKey) return;
+    const marker = state.markers.get(selectedMarkerKey);
+    setSelectedMarkerKey(null);
+    if (marker) await removeMarker(marker.id);
+  }
+
   const placingVisual = placingType !== null ? markerVisual(placingType) : null;
+  const selectedMarker = selectedMarkerKey ? state.markers.get(selectedMarkerKey) : undefined;
+  const selectedVisual = selectedMarker ? markerVisual(selectedMarker.type) : null;
+  const isOwnSelectedMarker = selectedMarker?.authorNodeNum === state.myNodeNum;
 
   return (
     <div className="map-wrap">
@@ -258,6 +272,23 @@ export function MapView({ state, sendMarker }: Props) {
           </span>
           <button type="button" className="secondary" onClick={() => setPlacingType(null)}>
             Cancelar
+          </button>
+        </div>
+      )}
+
+      {selectedMarker && selectedVisual && (
+        <div className="marker-placing-hint">
+          <span>
+            <strong>{selectedVisual.label.toUpperCase()}</strong>
+            {!isOwnSelectedMarker && " · de outro jogador"}
+          </span>
+          {isOwnSelectedMarker && (
+            <button type="button" className="marker-remove-btn" onClick={handleRemoveSelected}>
+              Remover
+            </button>
+          )}
+          <button type="button" className="secondary" onClick={() => setSelectedMarkerKey(null)}>
+            Fechar
           </button>
         </div>
       )}

@@ -7,6 +7,7 @@ export const MessageType = {
   STATUS: 0x01,
   MARKER: 0x02,
   DIRECTION: 0x03,
+  REMOVE_MARKER: 0x04,
 } as const;
 
 export const PlayerStatus = {
@@ -47,6 +48,11 @@ export function encodeMarker(marker: MarkerPayload): Uint8Array {
   return buf;
 }
 
+/** Remove um marcador pelo id — só o autor original pode remover o dele (o id é escopado por quem criou, via o `from` do pacote Meshtastic). */
+export function encodeRemoveMarker(id: number): Uint8Array {
+  return new Uint8Array([PROTOCOL_VERSION, MessageType.REMOVE_MARKER, id & 0xff]);
+}
+
 export function encodeDirection(headingDegrees: number): Uint8Array {
   const normalized = ((headingDegrees % 360) + 360) % 360;
   const headingByte = Math.round((normalized * 256) / 360) & 0xff;
@@ -57,6 +63,7 @@ export type DecodedMessage =
   | { type: "status"; status: PlayerStatusValue }
   | { type: "marker"; marker: MarkerPayload }
   | { type: "direction"; headingDegrees: number }
+  | { type: "remove_marker"; id: number }
   | { type: "desconhecido"; messageType: number };
 
 /** Retorna null se o pacote não tem o tamanho mínimo esperado ou a versão é futura demais pra entender. */
@@ -92,6 +99,10 @@ export function decodeMessage(bytes: Uint8Array): DecodedMessage | null {
       if (bytes.length < 3) return null;
       const headingDegrees = (bytes[2] * 360) / 256;
       return { type: "direction", headingDegrees };
+    }
+    case MessageType.REMOVE_MARKER: {
+      if (bytes.length < 3) return null;
+      return { type: "remove_marker", id: bytes[2] };
     }
     default:
       return { type: "desconhecido", messageType };

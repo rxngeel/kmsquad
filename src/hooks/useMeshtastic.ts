@@ -31,6 +31,7 @@ export function useMeshtastic() {
     setIdentity: (longName: string, shortName: string) => connection.setIdentity(longName, shortName),
     sendMarker: (type: MarkerTypeValue, latitudeI: number, longitudeI: number) =>
       connection.sendMarker(type, latitudeI, longitudeI),
+    removeMarker: (id: number) => connection.removeMarker(id),
     sendDirection: (headingDegrees: number) => connection.sendDirection(headingDegrees),
   };
 }

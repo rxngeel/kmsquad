@@ -594,6 +594,15 @@ select {
   font-size: 0.75rem;
 }
 
+.marker-remove-btn {
+  width: auto;
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 .footer-tap {
   text-align: center;
   color: var(--line);
