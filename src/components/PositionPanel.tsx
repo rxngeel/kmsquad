@@ -10,6 +10,7 @@ interface Props {
 export function PositionPanel({ state, sendPhonePosition }: Props) {
   const [active, setActive] = useState(false);
   const [lastSent, setLastSent] = useState<string>("—");
+  const [accuracy, setAccuracy] = useState<number>();
   const [gpsError, setGpsError] = useState<string>();
   const watchIdRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -42,9 +43,10 @@ export function PositionPanel({ state, sendPhonePosition }: Props) {
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        const { latitude, longitude, altitude } = pos.coords;
+        const { latitude, longitude, altitude, accuracy } = pos.coords;
         sendPhonePosition(latitude, longitude, altitude ?? undefined);
         setLastSent(new Date().toLocaleTimeString("pt-BR"));
+        setAccuracy(accuracy);
       },
       (err) => setGpsError(`Erro de GPS: ${err.message}`),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
@@ -87,9 +89,22 @@ export function PositionPanel({ state, sendPhonePosition }: Props) {
         </div>
       )}
       {gpsError && <div className="error-box">{gpsError}</div>}
+      {accuracy !== undefined && accuracy > 300 && (
+        <div className="error-box">
+          O celular está relatando uma precisão de só ±{Math.round(accuracy)} m —
+          dá pra errar um bairro inteiro. No iPhone, veja em Ajustes →
+          Privacidade e Segurança → Serviços de Localização → Bluefy → se
+          "Localização Precisa" está ativada. Se estiver desativada, o
+          iOS entrega só uma posição aproximada de propósito.
+        </div>
+      )}
       <div className="row">
         <span className="label">Último envio</span>
         <span className="value">{lastSent}</span>
+      </div>
+      <div className="row">
+        <span className="label">Precisão do celular</span>
+        <span className="value">{accuracy !== undefined ? `±${Math.round(accuracy)} m` : "—"}</span>
       </div>
       <div style={{ marginTop: 12 }}>
         <button className={active ? "secondary" : "primary"} onClick={active ? stop : start}>
