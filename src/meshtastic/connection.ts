@@ -1,5 +1,7 @@
+import { create } from "@bufbuild/protobuf";
 import { MeshDevice, Protobuf, Types } from "@meshtastic/core";
 import { TransportWebBluetooth } from "@meshtastic/transport-web-bluetooth";
+import { isPhoneGpsMode } from "./format";
 
 export type ConnectionStatus =
   | "desconectado"
@@ -125,13 +127,30 @@ export class MeshtasticConnection {
       });
 
       device.events.onPositionPacket.subscribe((packet) => {
-        const existing = this.state.nodes.get(packet.from);
-        if (existing) {
-          const nodes = new Map(this.state.nodes);
-          nodes.set(packet.from, { ...existing, position: packet.data });
-          this.setState({ nodes });
+        const isSelf = packet.from === this.state.myNodeNum;
+        if (isSelf && isPhoneGpsMode(this.state.positionConfig?.gpsMode, this.state.ownUser?.hwModel)) {
+          // Em modo celular, a posição de verdade é a que o app manda em
+          // sendPhonePosition. O que o próprio rádio relata sobre si mesmo
+          // aqui pode vir impreciso (ex.: canal reduzindo a precisão, ou o
+          // rádio tentando ler um GPS que esse modelo nem tem) — por isso
+          // ignoramos esse eco pra não sobrescrever a posição certa.
+          this.log(`Posição própria ignorada (eco do rádio, modo celular está ativo)`);
+          return;
         }
-        this.log(`Posição recebida do nó #${packet.from}`);
+
+        const existing = this.state.nodes.get(packet.from);
+        const nodes = new Map(this.state.nodes);
+        nodes.set(packet.from, {
+          ...(existing ?? create(Protobuf.Mesh.NodeInfoSchema, { num: packet.from })),
+          position: packet.data,
+        });
+        this.setState({ nodes });
+
+        const lat = packet.data.latitudeI !== undefined ? (packet.data.latitudeI / 1e7).toFixed(5) : "?";
+        const lon = packet.data.longitudeI !== undefined ? (packet.data.longitudeI / 1e7).toFixed(5) : "?";
+        this.log(
+          `Posição recebida do nó #${packet.from}: ${lat}, ${lon} (precisão: ${packet.data.precisionBits ?? "?"} bits)`,
+        );
       });
 
       device.events.onConfigPacket.subscribe((config) => {
@@ -212,7 +231,6 @@ export class MeshtasticConnection {
   /** Modo V3: envia a posição do GPS do celular para o próprio rádio retransmitir. */
   async sendPhonePosition(latitude: number, longitude: number, altitude?: number): Promise<void> {
     if (!this.device) return;
-    const { create } = await import("@bufbuild/protobuf");
     const position = create(Protobuf.Mesh.PositionSchema, {
       latitudeI: Math.round(latitude * 1e7),
       longitudeI: Math.round(longitude * 1e7),
