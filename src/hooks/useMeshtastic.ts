@@ -28,5 +28,6 @@ export function useMeshtastic() {
       broadcastSmartMinimumIntervalSecs?: number;
     }) => connection.setPositionSettings(patch),
     sendStatus: (status: PlayerStatusValue) => connection.sendStatus(status),
+    setIdentity: (longName: string, shortName: string) => connection.setIdentity(longName, shortName),
   };
 }

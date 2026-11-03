@@ -8,17 +8,10 @@
   --text-dim: #8a8a8a;
   --danger: #ff4d4d;
   --ok: #3ddc84;
-  --font-mono: "Courier New", ui-monospace, monospace;
   /* corte diagonal nos cantos — linguagem visual "HUD tático" usada em
      painéis/botões no lugar de cantos arredondados comuns */
   --cut-lg: 16px;
-  --cut-md: 10px;
   --cut-sm: 6px;
-}
-
-@keyframes pulse-danger {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
 }
 
 * {
@@ -107,17 +100,6 @@ body {
 
 .hud-topbar > * {
   pointer-events: auto;
-}
-
-.hud-clock {
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  background: rgba(10, 10, 10, 0.75);
-  border: 1px solid var(--line);
-  padding: 4px 12px;
-  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
 }
 
 .hud-menu-btn {
@@ -258,31 +240,6 @@ button.secondary {
 .badge.warn { background: var(--volt); color: #0a0a0a; }
 .badge.danger { background: var(--danger); color: #0a0a0a; }
 .badge.neutral { background: var(--line); color: var(--text-dim); }
-
-/* Botão flutuante único de status (ícone) — cicla VIVO → SANGRANDO → MORTO a
-   cada toque. Canto inferior direito, fora do caminho do polegar que segura
-   o celular preso no braço. */
-.status-fab {
-  position: absolute;
-  z-index: 1000;
-  right: calc(14px + env(safe-area-inset-right, 0px));
-  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  width: 52px;
-  height: 52px;
-  min-height: 52px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  clip-path: none;
-  border-width: 2px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-}
-
-.status-fab--ok { border-color: var(--ok); background: var(--ok); color: #0a0a0a; }
-.status-fab--danger { border-color: var(--danger); background: var(--danger); color: #0a0a0a; animation: pulse-danger 1.4s ease-in-out infinite; }
-.status-fab--neutral { border-color: var(--line); background: var(--bg-panel-raised); color: var(--text-dim); }
 
 .node-card {
   background: var(--bg-panel-raised);
@@ -432,9 +389,17 @@ select {
   border: 2px solid var(--text);
   color: var(--text);
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.map-marker span {
+  overflow: hidden;
+  text-overflow: clip;
+  max-width: 100%;
 }
 
 .map-marker--self {
@@ -442,21 +407,6 @@ select {
   background: var(--volt);
   color: #0a0a0a;
   box-shadow: 0 0 10px rgba(198, 238, 0, 0.6);
-}
-
-/* status prevalece sobre a cor de "sou eu" — saber quem foi atingido importa mais */
-.map-marker--sangrando {
-  border-color: var(--danger);
-  background: var(--danger);
-  color: #0a0a0a;
-  animation: pulse-danger 1.4s ease-in-out infinite;
-}
-
-.map-marker--morto {
-  border-color: var(--line);
-  background: var(--line);
-  color: var(--text-dim);
-  opacity: 0.6;
 }
 
 .map-marker--stale {

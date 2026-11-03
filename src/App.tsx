@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { useMeshtastic } from "./hooks/useMeshtastic";
 import { ConnectPanel } from "./components/ConnectPanel";
 import { MapView } from "./components/MapView";
-import { StatusPanel } from "./components/StatusPanel";
 import { HudMenu } from "./components/HudMenu";
 import { DebugScreen } from "./components/DebugScreen";
 import type { MeshState } from "./meshtastic/connection";
@@ -25,7 +24,7 @@ export default function App() {
     joinSquad,
     setLoraSettings,
     setPositionSettings,
-    sendStatus,
+    setIdentity,
   } = useMeshtastic();
   const [debugOpen, setDebugOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -83,8 +82,6 @@ export default function App() {
         </button>
       </div>
 
-      <StatusPanel state={state} sendStatus={sendStatus} />
-
       {menuOpen && (
         <HudMenu
           state={state}
@@ -99,6 +96,7 @@ export default function App() {
           setPositionSettings={setPositionSettings}
           sendPhonePosition={sendPhonePosition}
           sendTestMessage={sendTestMessage}
+          setIdentity={setIdentity}
         />
       )}
     </div>

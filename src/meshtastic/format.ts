@@ -129,9 +129,15 @@ export function gpsConfigMismatch(
   );
 }
 
-/** Rótulo curto pra marcador no mapa: numeral/callsign (shortName) ou nome completo. */
+/**
+ * Rótulo curto pra marcador no mapa: numeral/callsign (shortName), ou as
+ * primeiras letras do nome completo, ou o número do nó. Sempre cortado em 4
+ * caracteres — o marcador é um círculo pequeno, nome inteiro não cabe (bug
+ * relatado: nome vazando pra fora do círculo quando não tinha shortName).
+ */
 export function labelFor(node: { num: number; user?: Protobuf.Mesh.User }): string {
-  return node.user?.shortName || node.user?.longName || `#${node.num}`;
+  const raw = node.user?.shortName || node.user?.longName || `#${node.num}`;
+  return raw.trim().slice(0, 4).toUpperCase();
 }
 
 export function formatLatLon(latitudeI?: number, longitudeI?: number): string {

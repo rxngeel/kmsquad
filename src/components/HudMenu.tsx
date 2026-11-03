@@ -1,5 +1,6 @@
 import type { MeshState } from "../meshtastic/connection";
 import type { Protobuf } from "@meshtastic/core";
+import { IdentityPanel } from "./IdentityPanel";
 import { RadioConfigPanel } from "./RadioConfigPanel";
 import { RadioSettingsPanel } from "./RadioSettingsPanel";
 import { SquadPanel } from "./SquadPanel";
@@ -24,6 +25,7 @@ interface Props {
   }) => Promise<void>;
   sendPhonePosition: (lat: number, lon: number, alt?: number) => Promise<void>;
   sendTestMessage: (text: string) => Promise<void>;
+  setIdentity: (longName: string, shortName: string) => Promise<void>;
 }
 
 /** Menu lateral do HUD — tudo que não precisa ficar sempre visível no mapa fica aqui. */
@@ -37,6 +39,7 @@ export function HudMenu({
   setPositionSettings,
   sendPhonePosition,
   sendTestMessage,
+  setIdentity,
 }: Props) {
   return (
     <>
@@ -48,6 +51,7 @@ export function HudMenu({
             Fechar
           </button>
         </div>
+        <IdentityPanel state={state} setIdentity={setIdentity} />
         <SquadPanel state={state} createSquad={createSquad} joinSquad={joinSquad} />
         <RadioConfigPanel state={state} />
         <RadioSettingsPanel state={state} setLoraSettings={setLoraSettings} setPositionSettings={setPositionSettings} />

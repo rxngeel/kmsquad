@@ -402,6 +402,31 @@ export class MeshtasticConnection {
     this.log("Intervalo de posição atualizado.");
   }
 
+  /** Grava nome e numeral/callsign do jogador — é o que aparece pros outros (lista de nós, marcador no mapa). */
+  async setIdentity(longName: string, shortName: string): Promise<void> {
+    if (!this.device) throw new Error("Rádio não conectado.");
+    const owner = this.state.ownUser
+      ? create(Protobuf.Mesh.UserSchema, this.state.ownUser)
+      : create(Protobuf.Mesh.UserSchema, {});
+    Object.assign(owner, { longName, shortName });
+    await this.device.setOwner(owner);
+    this.setState({ ownUser: owner });
+
+    // Atualiza o próprio nó na hora — senão o marcador no mapa só mostraria
+    // o nome novo depois de um round-trip pela mesh.
+    if (this.state.myNodeNum !== undefined) {
+      const existing = this.state.nodes.get(this.state.myNodeNum);
+      const nodes = new Map(this.state.nodes);
+      nodes.set(this.state.myNodeNum, {
+        ...(existing ?? create(Protobuf.Mesh.NodeInfoSchema, { num: this.state.myNodeNum })),
+        user: owner,
+      });
+      this.setState({ nodes });
+    }
+
+    this.log(`Identidade atualizada: "${longName}" / "${shortName}".`);
+  }
+
   disconnect(): void {
     this.device = null;
     this.setState({ ...createInitialState() });
