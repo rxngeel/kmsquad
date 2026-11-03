@@ -22,6 +22,7 @@ export function SquadPanel({ state, createSquad, joinSquad }: Props) {
   const [qrDataUrl, setQrDataUrl] = useState<string>();
   const [joinPreviewName, setJoinPreviewName] = useState<string>();
   const [joinPreviewRegionOk, setJoinPreviewRegionOk] = useState<boolean>();
+  const [copied, setCopied] = useState(false);
 
   const currentChannelName = state.channels.get(0)?.settings?.name || undefined;
 
@@ -38,6 +39,24 @@ export function SquadPanel({ state, createSquad, joinSquad }: Props) {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleCopy() {
+    if (!resultUrl) return;
+    try {
+      await navigator.clipboard.writeText(resultUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Não consegui copiar sozinho — toque e segure no link acima pra copiar manualmente.");
+    }
+  }
+
+  function handleTestLocally() {
+    if (!resultUrl) return;
+    setMode("entrar");
+    setResultUrl(undefined);
+    handlePreviewJoin(resultUrl);
   }
 
   function handlePreviewJoin(value: string) {
@@ -133,6 +152,12 @@ export function SquadPanel({ state, createSquad, joinSquad }: Props) {
             </div>
           )}
           <input type="text" readOnly value={resultUrl} onFocus={(e) => e.currentTarget.select()} />
+          <button className="primary" onClick={handleCopy} style={{ marginTop: 10 }}>
+            {copied ? "Copiado!" : "Copiar link"}
+          </button>
+          <button className="secondary" onClick={handleTestLocally} style={{ marginTop: 10 }}>
+            Testar "entrar" agora (só pra conferir, com 1 rádio)
+          </button>
         </>
       )}
 
