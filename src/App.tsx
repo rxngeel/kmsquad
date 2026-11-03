@@ -4,7 +4,6 @@ import { ConnectPanel } from "./components/ConnectPanel";
 import { MapView } from "./components/MapView";
 import { StatusPanel } from "./components/StatusPanel";
 import { HudMenu } from "./components/HudMenu";
-import { Clock } from "./components/Clock";
 import { DebugScreen } from "./components/DebugScreen";
 import type { MeshState } from "./meshtastic/connection";
 
@@ -57,14 +56,14 @@ export default function App() {
     return (
       <div className="setup-screen">
         <h1>
-          KMS<span style={{ color: "var(--volt)" }}>SQUAD</span>
+          K<span style={{ color: "var(--volt)" }}>-TAK</span>
         </h1>
         <p style={{ color: "var(--text-dim)", fontSize: "0.85rem", marginTop: -8, marginBottom: 16 }}>
           Fase 3 — funções de jogo (em andamento)
         </p>
         <ConnectPanel state={state} onConnect={connect} />
         <div className="footer-tap" onClick={handleFooterTap}>
-          KMSQUAD · toque 5x para abrir o debug
+          K-TAK · toque 5x para abrir o debug
         </div>
       </div>
     );
@@ -75,10 +74,10 @@ export default function App() {
   return (
     <div className="hud-shell">
       <MapView state={state} />
+      <div className="hud-frame" />
 
       <div className="hud-topbar">
         <span className={`badge ${badge.cls}`}>{badge.label}</span>
-        <Clock />
         <button className="hud-menu-btn" onClick={() => setMenuOpen(true)} aria-label="Abrir menu">
           ☰
         </button>

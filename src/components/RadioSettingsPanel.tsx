@@ -122,7 +122,7 @@ export function RadioSettingsPanel({ state, setLoraSettings, setPositionSettings
         Atual: {presetLabel(state.loraConfig?.modemPreset)}. Ver docs/airtime.md
         pra entender o porquê de cada recomendação.
       </p>
-      <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 10 }}>
         <button className="primary" disabled={busyLora} onClick={() => applyPreset(PRESET_CQB)}>
           CQB ({presetLabel(PRESET_CQB)})
         </button>
@@ -188,7 +188,7 @@ export function RadioSettingsPanel({ state, setLoraSettings, setPositionSettings
           onChange={(e) => setHeartbeat(Number(e.target.value))}
         />
       </div>
-      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
         <button
           className="secondary"
           onClick={() => {

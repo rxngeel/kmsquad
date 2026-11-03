@@ -8,6 +8,17 @@
   --text-dim: #8a8a8a;
   --danger: #ff4d4d;
   --ok: #3ddc84;
+  --font-mono: "Courier New", ui-monospace, monospace;
+  /* corte diagonal nos cantos — linguagem visual "HUD tático" usada em
+     painéis/botões no lugar de cantos arredondados comuns */
+  --cut-lg: 16px;
+  --cut-md: 10px;
+  --cut-sm: 6px;
+}
+
+@keyframes pulse-danger {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 
 * {
@@ -59,6 +70,27 @@ body {
   margin: 0;
 }
 
+/* Moldura de cantos tipo mira/viewfinder — só decorativo, não captura toque. */
+.hud-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  --hf-b: 3px;
+  --hf-len: 26px;
+  --hf-in: 10px;
+  opacity: 0.55;
+  background:
+    linear-gradient(var(--volt), var(--volt)) left var(--hf-in) top var(--hf-in) / var(--hf-len) var(--hf-b) no-repeat,
+    linear-gradient(var(--volt), var(--volt)) left var(--hf-in) top var(--hf-in) / var(--hf-b) var(--hf-len) no-repeat,
+    linear-gradient(var(--volt), var(--volt)) right var(--hf-in) top var(--hf-in) / var(--hf-len) var(--hf-b) no-repeat,
+    linear-gradient(var(--volt), var(--volt)) right var(--hf-in) top var(--hf-in) / var(--hf-b) var(--hf-len) no-repeat,
+    linear-gradient(var(--volt), var(--volt)) left var(--hf-in) bottom var(--hf-in) / var(--hf-len) var(--hf-b) no-repeat,
+    linear-gradient(var(--volt), var(--volt)) left var(--hf-in) bottom var(--hf-in) / var(--hf-b) var(--hf-len) no-repeat,
+    linear-gradient(var(--volt), var(--volt)) right var(--hf-in) bottom var(--hf-in) / var(--hf-len) var(--hf-b) no-repeat,
+    linear-gradient(var(--volt), var(--volt)) right var(--hf-in) bottom var(--hf-in) / var(--hf-b) var(--hf-len) no-repeat;
+}
+
 .hud-topbar {
   position: absolute;
   z-index: 1000;
@@ -67,8 +99,9 @@ body {
   right: 0;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
-  padding: 10px 14px;
+  padding: 10px calc(14px + env(safe-area-inset-right, 0px)) 10px calc(14px + env(safe-area-inset-left, 0px));
   pointer-events: none;
 }
 
@@ -77,12 +110,14 @@ body {
 }
 
 .hud-clock {
+  font-family: var(--font-mono);
   font-size: 1.1rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  background: rgba(10, 10, 10, 0.7);
-  padding: 4px 10px;
-  border-radius: 4px;
+  background: rgba(10, 10, 10, 0.75);
+  border: 1px solid var(--line);
+  padding: 4px 12px;
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
 }
 
 .hud-menu-btn {
@@ -91,10 +126,10 @@ body {
   min-height: 44px;
   padding: 0;
   font-size: 1.3rem;
-  border-radius: 6px;
-  background: rgba(10, 10, 10, 0.7);
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+  background: rgba(10, 10, 10, 0.75);
   border-color: var(--line);
-  color: var(--text);
+  color: var(--volt);
 }
 
 .hud-drawer-backdrop {
@@ -111,11 +146,13 @@ body {
   right: 0;
   bottom: 0;
   width: min(420px, 92vw);
+  max-width: calc(100vw - env(safe-area-inset-left, 0px));
   overflow-y: auto;
   background: var(--bg);
   border-left: 1px solid var(--line);
   padding: 16px;
   padding-top: calc(16px + env(safe-area-inset-top, 0px));
+  padding-right: calc(16px + env(safe-area-inset-right, 0px));
   padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
@@ -152,7 +189,7 @@ button {
   background: transparent;
   color: var(--volt);
   padding: 14px 20px;
-  border-radius: 4px;
+  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% calc(100% - var(--cut-sm)), calc(100% - var(--cut-sm)) 100%, 0 100%, 0 var(--cut-sm));
   cursor: pointer;
   min-height: 48px;
   width: 100%;
@@ -176,7 +213,8 @@ button.secondary {
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-left: 3px solid var(--volt);
+  clip-path: polygon(var(--cut-lg) 0, 100% 0, 100% calc(100% - var(--cut-lg)), calc(100% - var(--cut-lg)) 100%, 0 100%, 0 var(--cut-lg));
   padding: 16px;
   margin-bottom: 14px;
 }
@@ -209,7 +247,7 @@ button.secondary {
 .badge {
   display: inline-block;
   padding: 3px 10px;
-  border-radius: 999px;
+  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut-sm));
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -221,30 +259,35 @@ button.secondary {
 .badge.danger { background: var(--danger); color: #0a0a0a; }
 .badge.neutral { background: var(--line); color: var(--text-dim); }
 
-/* Botão flutuante único de status — cicla VIVO → SANGRANDO → MORTO a cada toque. */
+/* Botão flutuante único de status (ícone) — cicla VIVO → SANGRANDO → MORTO a
+   cada toque. Canto inferior direito, fora do caminho do polegar que segura
+   o celular preso no braço. */
 .status-fab {
   position: absolute;
   z-index: 1000;
-  left: 50%;
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  width: auto;
-  min-width: 140px;
-  min-height: 56px;
-  padding: 0 24px;
-  border-radius: 999px;
-  border-width: 3px;
-  font-size: 1.1rem;
+  right: calc(14px + env(safe-area-inset-right, 0px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  width: 52px;
+  height: 52px;
+  min-height: 52px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  clip-path: none;
+  border-width: 2px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .status-fab--ok { border-color: var(--ok); background: var(--ok); color: #0a0a0a; }
-.status-fab--danger { border-color: var(--danger); background: var(--danger); color: #0a0a0a; }
+.status-fab--danger { border-color: var(--danger); background: var(--danger); color: #0a0a0a; animation: pulse-danger 1.4s ease-in-out infinite; }
 .status-fab--neutral { border-color: var(--line); background: var(--bg-panel-raised); color: var(--text-dim); }
 
 .node-card {
   background: var(--bg-panel-raised);
-  border-radius: 6px;
+  border-left: 2px solid var(--line);
+  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% calc(100% - var(--cut-sm)), calc(100% - var(--cut-sm)) 100%, 0 100%, 0 var(--cut-sm));
   padding: 10px 12px;
   margin-bottom: 8px;
 }
@@ -270,7 +313,7 @@ button.secondary {
 
 .msg {
   padding: 8px 10px;
-  border-radius: 4px;
+  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut-sm));
   font-size: 0.9rem;
   max-width: 85%;
 }
@@ -294,7 +337,7 @@ select {
   border: 1px solid var(--line);
   color: var(--text);
   padding: 12px;
-  border-radius: 4px;
+  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut-sm));
   font-size: 1rem;
   margin-bottom: 10px;
   font-family: inherit;
@@ -304,7 +347,7 @@ select {
   border: 1px solid var(--danger);
   color: var(--danger);
   padding: 10px 12px;
-  border-radius: 4px;
+  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut-sm));
   font-size: 0.9rem;
   margin-bottom: 12px;
 }
@@ -326,14 +369,14 @@ select {
 .map-layer-switch {
   position: absolute;
   top: calc(56px + env(safe-area-inset-top, 0px));
-  right: 10px;
+  right: calc(10px + env(safe-area-inset-right, 0px));
   z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 4px;
   background: rgba(10, 10, 10, 0.8);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut-sm));
   padding: 4px;
 }
 
@@ -351,6 +394,31 @@ select {
 .map-layer-switch button.active {
   border-color: var(--volt);
   color: var(--volt);
+}
+
+/* Controles do Leaflet (zoom, atribuição) também respeitam a área segura. */
+.leaflet-bottom.leaflet-left {
+  margin-left: calc(10px + env(safe-area-inset-left, 0px));
+  margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+.leaflet-bottom.leaflet-right {
+  margin-right: calc(10px + env(safe-area-inset-right, 0px));
+  margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Crédito dos provedores de tile é exigência de licença, não dá pra tirar —
+   mas fica bem discreto, do tamanho mínimo legível. */
+.leaflet-control-attribution {
+  background: rgba(10, 10, 10, 0.55) !important;
+  color: var(--text-dim) !important;
+  font-size: 0.62rem !important;
+  padding: 1px 6px !important;
+  border: none !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--text-dim) !important;
 }
 
 .map-marker {
@@ -373,6 +441,7 @@ select {
   border-color: var(--volt);
   background: var(--volt);
   color: #0a0a0a;
+  box-shadow: 0 0 10px rgba(198, 238, 0, 0.6);
 }
 
 /* status prevalece sobre a cor de "sou eu" — saber quem foi atingido importa mais */
@@ -380,6 +449,7 @@ select {
   border-color: var(--danger);
   background: var(--danger);
   color: #0a0a0a;
+  animation: pulse-danger 1.4s ease-in-out infinite;
 }
 
 .map-marker--morto {

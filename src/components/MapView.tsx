@@ -17,12 +17,16 @@ type BaseLayerId = "relevo" | "satelite" | "rua";
 // Satélite (Esri) é a visão mais literal do terreno, mas a licença da Esri
 // não deixa claro que dá pra cachear os tiles pra uso offline em massa —
 // por enquanto só pra visualização online; reavaliar na fase de mapa offline.
+// maxZoom > maxNativeZoom deixa o Leaflet "esticar" o último tile disponível
+// (fica um pouco granulado, mas dá pra aproximar mais que o provedor
+// realmente tem — pedido do Ran pra conseguir ver prédio por prédio).
 const BASE_LAYERS: Record<BaseLayerId, { label: string; url: string; options: L.TileLayerOptions }> = {
   relevo: {
     label: "Relevo",
     url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
     options: {
-      maxZoom: 17,
+      maxNativeZoom: 17,
+      maxZoom: 21,
       attribution: "© OpenTopoMap (CC-BY-SA) · dados © OpenStreetMap, SRTM",
     },
   },
@@ -30,14 +34,15 @@ const BASE_LAYERS: Record<BaseLayerId, { label: string; url: string; options: L.
     label: "Satélite",
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     options: {
-      maxZoom: 19,
+      maxNativeZoom: 19,
+      maxZoom: 21,
       attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics",
     },
   },
   rua: {
     label: "Rua",
     url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-    options: { maxZoom: 19, attribution: "© OpenStreetMap" },
+    options: { maxNativeZoom: 19, maxZoom: 21, attribution: "© OpenStreetMap" },
   },
 };
 
@@ -57,8 +62,16 @@ export function MapView({ state }: Props) {
     if (!containerRef.current) return;
     // zoomControl no canto inferior esquerdo: o canto superior fica ocupado
     // pela barra do HUD (status da conexão, relógio, menu).
-    const map = L.map(containerRef.current, { zoomControl: false }).setView(DEFAULT_CENTER, 16);
+    const map = L.map(containerRef.current, { zoomControl: false, maxZoom: 21 }).setView(DEFAULT_CENTER, 16);
     L.control.zoom({ position: "bottomleft" }).addTo(map);
+
+    // Atribuição é exigência de licença dos provedores de tile (OSM/OpenTopoMap/
+    // Esri), não dá pra tirar — mas tira o "Leaflet" (não é obrigatório) e
+    // move pro canto inferior esquerdo, longe do botão de status no canto
+    // inferior direito.
+    map.attributionControl.setPrefix(false);
+    map.attributionControl.setPosition("bottomleft");
+
     mapRef.current = map;
 
     return () => {

@@ -104,7 +104,7 @@ export function SquadPanel({ state, createSquad, joinSquad }: Props) {
           <span className="label">Canal atual</span>
           <span className="value">{currentChannelName || "—"}</span>
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
           <button className="primary" onClick={() => setMode("criar")}>
             Criar squad
           </button>
