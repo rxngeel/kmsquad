@@ -271,6 +271,12 @@ export class MeshtasticConnection {
     await this.device.setChannel(channel);
     this.log(`Squad "${name}" criado — canal principal do rádio substituído.`);
 
+    // Atualiza a tela na hora — o rádio pode demorar (ou só confirmar depois
+    // de reconectar) pra mandar o canal novo de volta pela mesh.
+    const channels = new Map(this.state.channels);
+    channels.set(0, channel);
+    this.setState({ channels });
+
     const channelSet = create(Protobuf.AppOnly.ChannelSetSchema, {
       settings: [settings],
       loraConfig: this.state.loraConfig,
@@ -292,11 +298,16 @@ export class MeshtasticConnection {
     });
     await this.device.setChannel(channel);
 
+    const channels = new Map(this.state.channels);
+    channels.set(0, channel);
+    this.setState({ channels });
+
     if (channelSet.loraConfig) {
       const config = create(Protobuf.Config.ConfigSchema, {
         payloadVariant: { case: "lora", value: channelSet.loraConfig },
       });
       await this.device.setConfig(config);
+      this.setState({ loraConfig: channelSet.loraConfig });
     }
 
     const label = settings.name || "(sem nome)";
