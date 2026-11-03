@@ -152,9 +152,8 @@ export function SquadPanel({ state, createSquad, joinSquad }: Props) {
           )}
           {joinPreviewRegionOk === false && (
             <div className="error-box">
-              Esse link configura o rádio pra uma região diferente da
-              recomendada pro Brasil (US). Confirme com quem te mandou antes
-              de continuar.
+              Esse link configura o rádio pra uma região diferente de Brasil
+              (BR_902). Confirme com quem te mandou antes de continuar.
             </div>
           )}
           <button className="primary" disabled={!joinPreviewName || busy} onClick={handleJoin}>

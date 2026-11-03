@@ -15,18 +15,24 @@ export function isPositionStale(epochSeconds: number | undefined): boolean {
   return Date.now() - epochSeconds * 1000 > 5 * 60 * 1000;
 }
 
-// O firmware do Meshtastic NÃO tem um código de região específico pro
-// Brasil (verificado no enum real da lib — não existe "BR_902"). A faixa que
-// a Anatel libera sem licença (902–907,5 MHz e 915–928 MHz) é a mesma faixa
-// ISM da região "US" do Meshtastic, e é essa a região recomendada pela
-// própria comunidade Meshtastic pro Brasil. Ver docs/decisoes.md.
+// BR_902 existe de verdade no firmware/protobuf oficial do Meshtastic (valor
+// 26, "Brazil 902MHz" — ver meshtastic/protobufs no GitHub, config.proto).
+// Só que é recente: a versão do pacote @meshtastic/protobufs publicada no
+// npm (2.8.0, a mais nova disponível) ainda não tem esse valor no enum —
+// por isso o rádio do Ran relatava região 26 e o app não reconhecia. Usamos
+// o número direto (26) em vez de Protobuf.Config.Config_LoRaConfig_RegionCode.BR_902
+// (que daria undefined nessa versão da lib) até o pacote ser atualizado.
+// Ver docs/decisoes.md.
+const BR_902 = 26 as Protobuf.Config.Config_LoRaConfig_RegionCode;
+
 const REGION_LABELS: Partial<Record<Protobuf.Config.Config_LoRaConfig_RegionCode, string>> = {
   [Protobuf.Config.Config_LoRaConfig_RegionCode.UNSET]: "NÃO DEFINIDA",
-  [Protobuf.Config.Config_LoRaConfig_RegionCode.US]: "EUA/BRASIL (US)",
+  [Protobuf.Config.Config_LoRaConfig_RegionCode.US]: "EUA (US)",
   [Protobuf.Config.Config_LoRaConfig_RegionCode.ANZ]: "AUSTRÁLIA/NZ (ANZ)",
+  [BR_902]: "BRASIL (BR_902)",
 };
 
-export const BRAZIL_REGION = Protobuf.Config.Config_LoRaConfig_RegionCode.US;
+export const BRAZIL_REGION = BR_902;
 
 export function regionLabel(region: Protobuf.Config.Config_LoRaConfig_RegionCode | undefined): string {
   if (region === undefined) return "—";

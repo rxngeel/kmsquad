@@ -56,11 +56,9 @@ export function RadioConfigPanel({ state }: Props) {
       </div>
       {lora && !regionOk && (
         <div className="error-box">
-          Região não está em US (a recomendada pro Brasil — o Meshtastic não
-          tem um código específico pro país, mas a faixa é a mesma liberada
-          pela Anatel). Fora dessa faixa o rádio pode transmitir fora do que
-          é permitido aqui. Ajuste no app oficial Meshtastic antes de usar em
-          campo.
+          Região não está em BR_902 (Brasil). Fora dessa faixa o rádio pode
+          transmitir fora do que a Anatel permite. Ajuste no app oficial
+          Meshtastic antes de usar em campo.
         </div>
       )}
       {gpsMismatch && (
