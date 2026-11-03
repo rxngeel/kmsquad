@@ -1,0 +1,18 @@
+import { useEffect, useState } from "react";
+import { MeshtasticConnection, createInitialState, type MeshState } from "../meshtastic/connection";
+
+export function useMeshtastic() {
+  const [connection] = useState(() => new MeshtasticConnection());
+  const [state, setState] = useState<MeshState>(createInitialState());
+
+  useEffect(() => connection.subscribe(setState), [connection]);
+
+  return {
+    state,
+    connect: () => connection.connect(),
+    disconnect: () => connection.disconnect(),
+    sendTestMessage: (text: string) => connection.sendTestMessage(text),
+    sendPhonePosition: (lat: number, lon: number, alt?: number) =>
+      connection.sendPhonePosition(lat, lon, alt),
+  };
+}
