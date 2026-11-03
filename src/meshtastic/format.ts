@@ -15,12 +15,18 @@ export function isPositionStale(epochSeconds: number | undefined): boolean {
   return Date.now() - epochSeconds * 1000 > 5 * 60 * 1000;
 }
 
+// O firmware do Meshtastic NÃO tem um código de região específico pro
+// Brasil (verificado no enum real da lib — não existe "BR_902"). A faixa que
+// a Anatel libera sem licença (902–907,5 MHz e 915–928 MHz) é a mesma faixa
+// ISM da região "US" do Meshtastic, e é essa a região recomendada pela
+// própria comunidade Meshtastic pro Brasil. Ver docs/decisoes.md.
 const REGION_LABELS: Partial<Record<Protobuf.Config.Config_LoRaConfig_RegionCode, string>> = {
   [Protobuf.Config.Config_LoRaConfig_RegionCode.UNSET]: "NÃO DEFINIDA",
-  [Protobuf.Config.Config_LoRaConfig_RegionCode.BR_902]: "BRASIL (BR_902)",
-  [Protobuf.Config.Config_LoRaConfig_RegionCode.US]: "EUA (US)",
+  [Protobuf.Config.Config_LoRaConfig_RegionCode.US]: "EUA/BRASIL (US)",
   [Protobuf.Config.Config_LoRaConfig_RegionCode.ANZ]: "AUSTRÁLIA/NZ (ANZ)",
 };
+
+export const BRAZIL_REGION = Protobuf.Config.Config_LoRaConfig_RegionCode.US;
 
 export function regionLabel(region: Protobuf.Config.Config_LoRaConfig_RegionCode | undefined): string {
   if (region === undefined) return "—";

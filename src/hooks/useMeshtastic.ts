@@ -14,5 +14,7 @@ export function useMeshtastic() {
     sendTestMessage: (text: string) => connection.sendTestMessage(text),
     sendPhonePosition: (lat: number, lon: number, alt?: number) =>
       connection.sendPhonePosition(lat, lon, alt),
+    createSquad: (name: string) => connection.createSquad(name),
+    joinSquad: (url: string) => connection.joinSquad(url),
   };
 }

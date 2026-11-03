@@ -1,6 +1,7 @@
 import { create } from "@bufbuild/protobuf";
 import { MeshDevice, Protobuf, Types } from "@meshtastic/core";
 import { TransportWebBluetooth } from "@meshtastic/transport-web-bluetooth";
+import { buildSquadChannelSettings, decodeChannelUrl, encodeChannelUrl } from "./channelUrl";
 import { isPhoneGpsMode } from "./format";
 
 export type ConnectionStatus =
@@ -252,6 +253,55 @@ export class MeshtasticConnection {
     }
 
     this.log(`Posição do celular enviada: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+  }
+
+  /**
+   * Cria um squad novo: substitui o canal principal (índice 0) do rádio por
+   * um canal com PSK aleatória forte e precisão de posição máxima. Retorna
+   * o link pra compartilhar (mesmo formato de QR/link do app oficial).
+   */
+  async createSquad(name: string): Promise<string> {
+    if (!this.device) throw new Error("Rádio não conectado.");
+    const settings = buildSquadChannelSettings(name);
+    const channel = create(Protobuf.Channel.ChannelSchema, {
+      index: 0,
+      role: Protobuf.Channel.Channel_Role.PRIMARY,
+      settings,
+    });
+    await this.device.setChannel(channel);
+    this.log(`Squad "${name}" criado — canal principal do rádio substituído.`);
+
+    const channelSet = create(Protobuf.AppOnly.ChannelSetSchema, {
+      settings: [settings],
+      loraConfig: this.state.loraConfig,
+    });
+    return encodeChannelUrl(channelSet);
+  }
+
+  /** Entra num squad a partir de um link/QR: grava o canal (e a config LoRa, se vier no link) no rádio. */
+  async joinSquad(url: string): Promise<string> {
+    if (!this.device) throw new Error("Rádio não conectado.");
+    const channelSet = decodeChannelUrl(url);
+    const settings = channelSet.settings[0];
+    if (!settings) throw new Error("Esse link não tem nenhum canal dentro.");
+
+    const channel = create(Protobuf.Channel.ChannelSchema, {
+      index: 0,
+      role: Protobuf.Channel.Channel_Role.PRIMARY,
+      settings,
+    });
+    await this.device.setChannel(channel);
+
+    if (channelSet.loraConfig) {
+      const config = create(Protobuf.Config.ConfigSchema, {
+        payloadVariant: { case: "lora", value: channelSet.loraConfig },
+      });
+      await this.device.setConfig(config);
+    }
+
+    const label = settings.name || "(sem nome)";
+    this.log(`Entrou no squad "${label}" — canal principal do rádio substituído.`);
+    return label;
   }
 
   disconnect(): void {

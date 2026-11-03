@@ -3,13 +3,14 @@ import { useMeshtastic } from "./hooks/useMeshtastic";
 import { ConnectPanel } from "./components/ConnectPanel";
 import { MapView } from "./components/MapView";
 import { RadioConfigPanel } from "./components/RadioConfigPanel";
+import { SquadPanel } from "./components/SquadPanel";
 import { NodeListPanel } from "./components/NodeListPanel";
 import { PositionPanel } from "./components/PositionPanel";
 import { TestMessagePanel } from "./components/TestMessagePanel";
 import { DebugScreen } from "./components/DebugScreen";
 
 export default function App() {
-  const { state, connect, sendTestMessage, sendPhonePosition } = useMeshtastic();
+  const { state, connect, sendTestMessage, sendPhonePosition, createSquad, joinSquad } = useMeshtastic();
   const [debugOpen, setDebugOpen] = useState(false);
   const tapCountRef = useRef(0);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,6 +44,7 @@ export default function App() {
           {connected && (
             <>
               <MapView state={state} />
+              <SquadPanel state={state} createSquad={createSquad} joinSquad={joinSquad} />
               <RadioConfigPanel state={state} />
               <NodeListPanel state={state} />
               <PositionPanel state={state} sendPhonePosition={sendPhonePosition} />

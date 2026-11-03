@@ -1,6 +1,6 @@
-import { Protobuf } from "@meshtastic/core";
 import type { MeshState } from "../meshtastic/connection";
 import {
+  BRAZIL_REGION,
   gpsConfigMismatch,
   gpsModeLabel,
   hwModelLabel,
@@ -18,7 +18,7 @@ export function RadioConfigPanel({ state }: Props) {
   const channelCount = state.channels.size;
   const ownName = state.ownUser?.longName ?? "—";
   const hwModel = state.ownUser?.hwModel;
-  const regionOk = lora?.region === Protobuf.Config.Config_LoRaConfig_RegionCode.BR_902;
+  const regionOk = lora?.region === BRAZIL_REGION;
   const gpsMismatch = gpsConfigMismatch(position?.gpsMode, hwModel);
 
   return (
@@ -56,9 +56,11 @@ export function RadioConfigPanel({ state }: Props) {
       </div>
       {lora && !regionOk && (
         <div className="error-box">
-          Região não está em BR_902 (Brasil). Fora dessa faixa o rádio pode
-          transmitir fora do que a Anatel permite. Ajuste no app oficial
-          Meshtastic antes de usar em campo.
+          Região não está em US (a recomendada pro Brasil — o Meshtastic não
+          tem um código específico pro país, mas a faixa é a mesma liberada
+          pela Anatel). Fora dessa faixa o rádio pode transmitir fora do que
+          é permitido aqui. Ajuste no app oficial Meshtastic antes de usar em
+          campo.
         </div>
       )}
       {gpsMismatch && (
