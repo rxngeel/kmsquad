@@ -135,5 +135,6 @@ Teste de aceitação: V3 conectado no iPhone pelo Bluefy e V4 ligado com GPS, um
 ## Como trabalhar
 
 - Uma fase por vez. Ao terminar, publique, mande o link e o checklist de teste, e espere o retorno do Ran antes da próxima.
+- Publicação direto na `main`, sem pedir confirmação a cada vez: ao terminar uma correção ou entrega, leve pra `main` (o que dispara o deploy do GitHub Pages) sem abrir pull request nem esperar aprovação. Combinado com o Ran em 2026-11-03.
 - Mantenha um `docs/decisoes.md` com cada decisão técnica relevante em uma linha, e o porquê.
 - Se uma restrição deste documento se mostrar inviável na prática (ex.: algo não funciona no Bluefy), pare, explique em linguagem simples e proponha alternativas com custo e esforço de cada uma.
