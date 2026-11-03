@@ -303,17 +303,34 @@ export class MeshtasticConnection {
     this.log(`Mensagem de teste enviada: ${text}`);
   }
 
+  /**
+   * Manda um pacote nosso (status/marcador/direção) na porta privada, sem
+   * esperar confirmação (ACK) do rádio. Por padrão o sendPacket da lib
+   * espera ACK + resposta — isso trava pra sempre num broadcast quando não
+   * tem outro nó por perto pra confirmar (bug real encontrado: status e
+   * marcador pareciam "não fazer nada" porque o await nunca retornava).
+   */
+  private async sendRawPacket(bytes: Uint8Array): Promise<void> {
+    if (!this.device) return;
+    await this.device.sendPacket(
+      bytes,
+      Protobuf.Portnums.PortNum.PRIVATE_APP,
+      "broadcast",
+      0,
+      false, // wantAck
+      false, // wantResponse
+    );
+  }
+
   /** Troca o próprio status (VIVO/HIT/MEDIC/RESPAWN) e avisa o squad. */
   async sendStatus(status: PlayerStatusValue): Promise<void> {
     if (!this.device) return;
-    const bytes = encodeStatus(status);
-    await this.device.sendPacket(bytes, Protobuf.Portnums.PortNum.PRIVATE_APP, "broadcast", 0);
-
     if (this.state.myNodeNum !== undefined) {
       const playerStatus = new Map(this.state.playerStatus);
       playerStatus.set(this.state.myNodeNum, status);
       this.setState({ playerStatus });
     }
+    await this.sendRawPacket(encodeStatus(status));
     this.log(`Status alterado para ${status}.`);
   }
 
@@ -322,8 +339,6 @@ export class MeshtasticConnection {
     if (!this.device) return;
     this.markerIdCounter = (this.markerIdCounter + 1) & 0xff;
     const id = this.markerIdCounter;
-    const bytes = encodeMarker({ type, id, latitudeI, longitudeI });
-    await this.device.sendPacket(bytes, Protobuf.Portnums.PortNum.PRIVATE_APP, "broadcast", 0);
 
     if (this.state.myNodeNum !== undefined) {
       const markers = new Map(this.state.markers);
@@ -337,20 +352,19 @@ export class MeshtasticConnection {
       });
       this.setState({ markers });
     }
+    await this.sendRawPacket(encodeMarker({ type, id, latitudeI, longitudeI }));
     this.log(`Marcador tipo ${type} criado.`);
   }
 
   /** Avisa o squad da direção pra onde o jogador tá virado (bússola). Chamado com throttle pelo hook de bússola. */
   async sendDirection(headingDegrees: number): Promise<void> {
     if (!this.device) return;
-    const bytes = encodeDirection(headingDegrees);
-    await this.device.sendPacket(bytes, Protobuf.Portnums.PortNum.PRIVATE_APP, "broadcast", 0);
-
     if (this.state.myNodeNum !== undefined) {
       const headings = new Map(this.state.headings);
       headings.set(this.state.myNodeNum, headingDegrees);
       this.setState({ headings });
     }
+    await this.sendRawPacket(encodeDirection(headingDegrees));
   }
 
   /** Modo V3: envia a posição do GPS do celular para o próprio rádio retransmitir. */
