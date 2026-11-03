@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Protobuf } from "@meshtastic/core";
 import { MeshtasticConnection, createInitialState, type MeshState } from "../meshtastic/connection";
+import type { PlayerStatusValue } from "../meshtastic/protocol";
 
 export function useMeshtastic() {
   const [connection] = useState(() => new MeshtasticConnection());
@@ -26,5 +27,6 @@ export function useMeshtastic() {
       broadcastSmartMinimumDistance?: number;
       broadcastSmartMinimumIntervalSecs?: number;
     }) => connection.setPositionSettings(patch),
+    sendStatus: (status: PlayerStatusValue) => connection.sendStatus(status),
   };
 }

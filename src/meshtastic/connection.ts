@@ -3,6 +3,7 @@ import { MeshDevice, Protobuf, Types } from "@meshtastic/core";
 import { TransportWebBluetooth } from "@meshtastic/transport-web-bluetooth";
 import { buildSquadChannelSettings, decodeChannelUrl, encodeChannelUrl } from "./channelUrl";
 import { isPhoneGpsMode } from "./format";
+import { decodeMessage, encodeStatus, type PlayerStatusValue } from "./protocol";
 
 export type ConnectionStatus =
   | "desconectado"
@@ -22,6 +23,7 @@ export interface MeshState {
   deviceConfig?: Protobuf.Config.Config_DeviceConfig;
   channels: Map<number, Protobuf.Channel.Channel>;
   nodes: Map<number, Protobuf.Mesh.NodeInfo>;
+  playerStatus: Map<number, PlayerStatusValue>;
   messages: Array<{
     id: number;
     from: number;
@@ -37,6 +39,7 @@ export function createInitialState(): MeshState {
     status: "desconectado",
     channels: new Map(),
     nodes: new Map(),
+    playerStatus: new Map(),
     messages: [],
     debugLog: [],
   };
@@ -202,6 +205,39 @@ export class MeshtasticConnection {
         this.log(`[rádio] ${record.message}`);
       });
 
+      // Status/marcador/direção do KMSQUAD viajam na porta privada do
+      // Meshtastic, fora dos eventos "de fábrica" acima — ver docs/protocolo.md.
+      device.events.onMeshPacket.subscribe((packet) => {
+        if (packet.payloadVariant.case !== "decoded") return;
+        const data = packet.payloadVariant.value;
+        if (data.portnum !== Protobuf.Portnums.PortNum.PRIVATE_APP) return;
+
+        const decoded = decodeMessage(data.payload);
+        if (!decoded) {
+          this.log(`[protocolo] pacote de #${packet.from} ignorado (versão futura ou tamanho inválido)`);
+          return;
+        }
+
+        switch (decoded.type) {
+          case "status": {
+            const playerStatus = new Map(this.state.playerStatus);
+            playerStatus.set(packet.from, decoded.status);
+            this.setState({ playerStatus });
+            this.log(`Status de #${packet.from}: ${decoded.status}`);
+            break;
+          }
+          case "marker":
+            this.log(`[protocolo] marcador de #${packet.from} recebido (ainda sem UI pra mostrar)`);
+            break;
+          case "direction":
+            this.log(`[protocolo] direção de #${packet.from}: ${decoded.headingDegrees.toFixed(0)}°`);
+            break;
+          case "desconhecido":
+            this.log(`[protocolo] tipo de mensagem desconhecido (0x${decoded.messageType.toString(16)}) de #${packet.from}`);
+            break;
+        }
+      });
+
       await device.configure();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -227,6 +263,20 @@ export class MeshtasticConnection {
     });
     await this.device.sendText(text);
     this.log(`Mensagem de teste enviada: ${text}`);
+  }
+
+  /** Troca o próprio status (VIVO/HIT/MEDIC/RESPAWN) e avisa o squad. */
+  async sendStatus(status: PlayerStatusValue): Promise<void> {
+    if (!this.device) return;
+    const bytes = encodeStatus(status);
+    await this.device.sendPacket(bytes, Protobuf.Portnums.PortNum.PRIVATE_APP, "broadcast", 0);
+
+    if (this.state.myNodeNum !== undefined) {
+      const playerStatus = new Map(this.state.playerStatus);
+      playerStatus.set(this.state.myNodeNum, status);
+      this.setState({ playerStatus });
+    }
+    this.log(`Status alterado para ${status}.`);
   }
 
   /** Modo V3: envia a posição do GPS do celular para o próprio rádio retransmitir. */

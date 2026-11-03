@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { MeshState } from "../meshtastic/connection";
 import { isPositionStale, labelFor } from "../meshtastic/format";
+import { PlayerStatus } from "../meshtastic/protocol";
 
 // Airsoft Company (Curitiba) é o campo de referência pra teste — provisório
 // até o Ran mandar a localização exata. Troca pra fase de mapa offline.
@@ -93,11 +94,15 @@ export function MapView({ state }: Props) {
       const isSelf = node.num === state.myNodeNum;
       const stale = isPositionStale(pos.time);
       const label = labelFor(node);
+      const status = state.playerStatus.get(node.num);
 
       const icon = L.divIcon({
         className: [
           "map-marker",
           isSelf && "map-marker--self",
+          status === PlayerStatus.HIT && "map-marker--hit",
+          status === PlayerStatus.MEDIC && "map-marker--medic",
+          status === PlayerStatus.RESPAWN && "map-marker--respawn",
           stale && "map-marker--stale",
         ]
           .filter(Boolean)
@@ -127,7 +132,7 @@ export function MapView({ state }: Props) {
         markersRef.current.delete(num);
       }
     }
-  }, [state.nodes, state.myNodeNum]);
+  }, [state.nodes, state.myNodeNum, state.playerStatus]);
 
   return (
     <div className="map-wrap">

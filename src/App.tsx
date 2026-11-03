@@ -5,6 +5,7 @@ import { MapView } from "./components/MapView";
 import { RadioConfigPanel } from "./components/RadioConfigPanel";
 import { RadioSettingsPanel } from "./components/RadioSettingsPanel";
 import { SquadPanel } from "./components/SquadPanel";
+import { StatusPanel } from "./components/StatusPanel";
 import { NodeListPanel } from "./components/NodeListPanel";
 import { PositionPanel } from "./components/PositionPanel";
 import { TestMessagePanel } from "./components/TestMessagePanel";
@@ -20,6 +21,7 @@ export default function App() {
     joinSquad,
     setLoraSettings,
     setPositionSettings,
+    sendStatus,
   } = useMeshtastic();
   const [debugOpen, setDebugOpen] = useState(false);
   const tapCountRef = useRef(0);
@@ -43,7 +45,7 @@ export default function App() {
         KMS<span style={{ color: "var(--volt)" }}>SQUAD</span>
       </h1>
       <p style={{ color: "var(--text-dim)", fontSize: "0.85rem", marginTop: -8, marginBottom: 16 }}>
-        Fase 2 — mapa e squad (em andamento)
+        Fase 3 — funções de jogo (em andamento)
       </p>
 
       {debugOpen ? (
@@ -54,6 +56,7 @@ export default function App() {
           {connected && (
             <>
               <MapView state={state} />
+              <StatusPanel state={state} sendStatus={sendStatus} />
               <SquadPanel state={state} createSquad={createSquad} joinSquad={joinSquad} />
               <RadioConfigPanel state={state} />
               <RadioSettingsPanel

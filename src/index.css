@@ -126,6 +126,36 @@ button.secondary {
 .badge.danger { background: var(--danger); color: #0a0a0a; }
 .badge.neutral { background: var(--line); color: var(--text-dim); }
 
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.status-btn {
+  min-height: 64px;
+  font-size: 1.1rem;
+  border-width: 2px;
+  background: transparent;
+  opacity: 0.55;
+}
+
+.status-btn--active {
+  opacity: 1;
+}
+
+.status-btn--ok { border-color: var(--ok); color: var(--ok); }
+.status-btn--ok.status-btn--active { background: var(--ok); color: #0a0a0a; }
+
+.status-btn--danger { border-color: var(--danger); color: var(--danger); }
+.status-btn--danger.status-btn--active { background: var(--danger); color: #0a0a0a; }
+
+.status-btn--warn { border-color: var(--volt); color: var(--volt); }
+.status-btn--warn.status-btn--active { background: var(--volt); color: #0a0a0a; }
+
+.status-btn--neutral { border-color: var(--line); color: var(--text-dim); }
+.status-btn--neutral.status-btn--active { background: var(--line); color: var(--text); }
+
 .node-card {
   background: var(--bg-panel-raised);
   border-radius: 6px;
@@ -257,6 +287,25 @@ select {
   border-color: var(--volt);
   background: var(--volt);
   color: #0a0a0a;
+}
+
+/* status prevalece sobre a cor de "sou eu" — saber quem foi atingido importa mais */
+.map-marker--hit {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #0a0a0a;
+}
+
+.map-marker--medic {
+  border-color: var(--volt);
+  background: transparent;
+  color: var(--volt);
+}
+
+.map-marker--respawn {
+  border-color: var(--line);
+  background: var(--line);
+  color: var(--text-dim);
 }
 
 .map-marker--stale {

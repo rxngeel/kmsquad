@@ -1,4 +1,27 @@
 import { Protobuf } from "@meshtastic/core";
+import { PlayerStatus, type PlayerStatusValue } from "./protocol";
+
+const STATUS_LABELS: Record<PlayerStatusValue, string> = {
+  [PlayerStatus.VIVO]: "VIVO",
+  [PlayerStatus.HIT]: "HIT",
+  [PlayerStatus.MEDIC]: "MEDIC",
+  [PlayerStatus.RESPAWN]: "RESPAWN",
+};
+
+const STATUS_BADGE_CLASS: Record<PlayerStatusValue, string> = {
+  [PlayerStatus.VIVO]: "ok",
+  [PlayerStatus.HIT]: "danger",
+  [PlayerStatus.MEDIC]: "warn",
+  [PlayerStatus.RESPAWN]: "neutral",
+};
+
+export function statusLabel(status: PlayerStatusValue | undefined): string {
+  return status !== undefined ? STATUS_LABELS[status] : "VIVO";
+}
+
+export function statusBadgeClass(status: PlayerStatusValue | undefined): string {
+  return status !== undefined ? STATUS_BADGE_CLASS[status] : "ok";
+}
 
 export function formatAge(epochSeconds: number | undefined): string {
   if (!epochSeconds) return "sem dados";
