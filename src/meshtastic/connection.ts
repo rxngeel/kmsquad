@@ -91,6 +91,10 @@ export class MeshtasticConnection {
 
       const transport = await TransportWebBluetooth.createFromDevice(bleDevice);
       const device = new MeshDevice(transport);
+      // o logger interno (tslog) formata em modo "pretty" por padrão, e isso
+      // chama util.formatWithOptions — que o polyfill de `util` do navegador
+      // não implementa. "json" usa só JSON.stringify e evita esse crash.
+      (device.log as unknown as { settings: { type: string } }).settings.type = "json";
       this.device = device;
       this.setState({ deviceName: bleDevice.name ?? "Rádio Meshtastic" });
 
