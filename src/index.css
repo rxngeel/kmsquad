@@ -379,7 +379,11 @@ select {
 }
 
 .map-marker {
-  display: flex;
+  /* !important porque o leaflet.css tem `.leaflet-marker-icon { display:
+     block }` com a mesma especificidade — na build de produção o CSS dele
+     carrega depois do nosso e ganha o empate, quebrando a centralização
+     (bug relatado: texto fora de posição). */
+  display: flex !important;
   align-items: center;
   justify-content: center;
   width: 44px;
