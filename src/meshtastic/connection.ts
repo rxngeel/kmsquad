@@ -315,6 +315,43 @@ export class MeshtasticConnection {
     return label;
   }
 
+  /** Grava região e/ou preset de modem, preservando o resto da config LoRa atual. */
+  async setLoraSettings(patch: {
+    region?: Protobuf.Config.Config_LoRaConfig_RegionCode;
+    modemPreset?: Protobuf.Config.Config_LoRaConfig_ModemPreset;
+  }): Promise<void> {
+    if (!this.device) throw new Error("Rádio não conectado.");
+    const loraConfig = this.state.loraConfig
+      ? create(Protobuf.Config.Config_LoRaConfigSchema, this.state.loraConfig)
+      : create(Protobuf.Config.Config_LoRaConfigSchema, {});
+    Object.assign(loraConfig, patch, { usePreset: true }); // sem usePreset o rádio ignora modemPreset e usa bandwidth/SF/CR manuais
+    const config = create(Protobuf.Config.ConfigSchema, {
+      payloadVariant: { case: "lora", value: loraConfig },
+    });
+    await this.device.setConfig(config);
+    this.setState({ loraConfig });
+    this.log("Config LoRa (região/preset) atualizada.");
+  }
+
+  /** Grava o intervalo de posição ("envio inteligente"), preservando o resto da config de posição atual. */
+  async setPositionSettings(patch: {
+    positionBroadcastSecs?: number;
+    broadcastSmartMinimumDistance?: number;
+    broadcastSmartMinimumIntervalSecs?: number;
+  }): Promise<void> {
+    if (!this.device) throw new Error("Rádio não conectado.");
+    const positionConfig = this.state.positionConfig
+      ? create(Protobuf.Config.Config_PositionConfigSchema, this.state.positionConfig)
+      : create(Protobuf.Config.Config_PositionConfigSchema, {});
+    Object.assign(positionConfig, patch, { positionBroadcastSmartEnabled: true });
+    const config = create(Protobuf.Config.ConfigSchema, {
+      payloadVariant: { case: "position", value: positionConfig },
+    });
+    await this.device.setConfig(config);
+    this.setState({ positionConfig });
+    this.log("Intervalo de posição atualizado.");
+  }
+
   disconnect(): void {
     this.device = null;
     this.setState({ ...createInitialState() });

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { Protobuf } from "@meshtastic/core";
 import { MeshtasticConnection, createInitialState, type MeshState } from "../meshtastic/connection";
 
 export function useMeshtastic() {
@@ -16,5 +17,14 @@ export function useMeshtastic() {
       connection.sendPhonePosition(lat, lon, alt),
     createSquad: (name: string) => connection.createSquad(name),
     joinSquad: (url: string) => connection.joinSquad(url),
+    setLoraSettings: (patch: {
+      region?: Protobuf.Config.Config_LoRaConfig_RegionCode;
+      modemPreset?: Protobuf.Config.Config_LoRaConfig_ModemPreset;
+    }) => connection.setLoraSettings(patch),
+    setPositionSettings: (patch: {
+      positionBroadcastSecs?: number;
+      broadcastSmartMinimumDistance?: number;
+      broadcastSmartMinimumIntervalSecs?: number;
+    }) => connection.setPositionSettings(patch),
   };
 }

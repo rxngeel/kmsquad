@@ -170,7 +170,9 @@ button.secondary {
   background: var(--bg-panel-raised);
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="number"],
+select {
   width: 100%;
   background: var(--bg-panel-raised);
   border: 1px solid var(--line);
@@ -179,6 +181,7 @@ input[type="text"] {
   border-radius: 4px;
   font-size: 1rem;
   margin-bottom: 10px;
+  font-family: inherit;
 }
 
 .error-box {
