@@ -190,14 +190,48 @@ input[type="text"] {
   margin-bottom: 12px;
 }
 
+.map-wrap {
+  position: relative;
+  margin-bottom: 14px;
+}
+
 .map-view {
   height: 50vh;
   min-height: 320px;
   border-radius: 6px;
   overflow: hidden;
-  margin-bottom: 14px;
   border: 1px solid var(--line);
   background: var(--bg-panel);
+}
+
+.map-layer-switch {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.map-layer-switch button {
+  width: auto;
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  border-width: 1px;
+  border-color: var(--line);
+  color: var(--text-dim);
+  background: transparent;
+}
+
+.map-layer-switch button.active {
+  border-color: var(--volt);
+  color: var(--volt);
 }
 
 .map-marker {

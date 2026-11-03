@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { MeshState } from "../meshtastic/connection";
@@ -7,6 +7,38 @@ import { isPositionStale, labelFor } from "../meshtastic/format";
 // Airsoft Company (Curitiba) é o campo de referência pra teste — provisório
 // até o Ran mandar a localização exata. Troca pra fase de mapa offline.
 const DEFAULT_CENTER: [number, number] = [-25.4284, -49.2733];
+
+type BaseLayerId = "relevo" | "satelite" | "rua";
+
+// Relevo (OpenTopoMap) mostra vegetação (verde = mata) e curvas de nível —
+// bom pra diferenciar mata/aberto/elevação, e a licença (CC-BY-SA, dados
+// OSM+SRTM) permite cache offline mais tranquilo que imagem de satélite.
+// Satélite (Esri) é a visão mais literal do terreno, mas a licença da Esri
+// não deixa claro que dá pra cachear os tiles pra uso offline em massa —
+// por enquanto só pra visualização online; reavaliar na fase de mapa offline.
+const BASE_LAYERS: Record<BaseLayerId, { label: string; url: string; options: L.TileLayerOptions }> = {
+  relevo: {
+    label: "Relevo",
+    url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+    options: {
+      maxZoom: 17,
+      attribution: "© OpenTopoMap (CC-BY-SA) · dados © OpenStreetMap, SRTM",
+    },
+  },
+  satelite: {
+    label: "Satélite",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    options: {
+      maxZoom: 19,
+      attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics",
+    },
+  },
+  rua: {
+    label: "Rua",
+    url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    options: { maxZoom: 19, attribution: "© OpenStreetMap" },
+  },
+};
 
 interface Props {
   state: MeshState;
@@ -17,23 +49,33 @@ export function MapView({ state }: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef(new Map<number, L.Marker>());
   const hasCenteredRef = useRef(false);
+  const baseLayerRef = useRef<L.TileLayer | null>(null);
+  const [baseLayerId, setBaseLayerId] = useState<BaseLayerId>("relevo");
 
   useEffect(() => {
     if (!containerRef.current) return;
     const map = L.map(containerRef.current, { zoomControl: true }).setView(DEFAULT_CENTER, 16);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "© OpenStreetMap",
-    }).addTo(map);
     mapRef.current = map;
 
     return () => {
       map.remove();
       mapRef.current = null;
+      baseLayerRef.current = null;
       markersRef.current.clear();
       hasCenteredRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const def = BASE_LAYERS[baseLayerId];
+    const layer = L.tileLayer(def.url, def.options);
+    layer.addTo(map);
+    const previous = baseLayerRef.current;
+    baseLayerRef.current = layer;
+    if (previous) previous.remove();
+  }, [baseLayerId]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -87,5 +129,21 @@ export function MapView({ state }: Props) {
     }
   }, [state.nodes, state.myNodeNum]);
 
-  return <div ref={containerRef} className="map-view" />;
+  return (
+    <div className="map-wrap">
+      <div ref={containerRef} className="map-view" />
+      <div className="map-layer-switch">
+        {(Object.keys(BASE_LAYERS) as BaseLayerId[]).map((id) => (
+          <button
+            key={id}
+            type="button"
+            className={id === baseLayerId ? "active" : ""}
+            onClick={() => setBaseLayerId(id)}
+          >
+            {BASE_LAYERS[id].label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
