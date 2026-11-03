@@ -70,7 +70,12 @@ export function MapView({ state, sendMarker }: Props) {
   const hasCenteredRef = useRef(false);
   const baseLayerRef = useRef<L.TileLayer | null>(null);
   const [baseLayerId, setBaseLayerId] = useState<BaseLayerId>("relevo");
-  const [pendingLatLng, setPendingLatLng] = useState<{ lat: number; lng: number } | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [placingType, setPlacingType] = useState<MarkerTypeValue | null>(null);
+  const placingTypeRef = useRef<MarkerTypeValue | null>(null);
+  placingTypeRef.current = placingType;
+  const sendMarkerRef = useRef(sendMarker);
+  sendMarkerRef.current = sendMarker;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -86,11 +91,17 @@ export function MapView({ state, sendMarker }: Props) {
     map.attributionControl.setPrefix(false);
     map.attributionControl.setPosition("bottomleft");
 
-    // Toque segurando no mapa (Leaflet já simula "contextmenu" em toque
-    // longo no Safari/WebKit mobile — é o que o Bluefy usa) abre o menu de
-    // marcador rápido. CONTATO precisa ser o mais rápido possível de marcar.
-    map.on("contextmenu", (e: L.LeafletMouseEvent) => {
-      setPendingLatLng({ lat: e.latlng.lat, lng: e.latlng.lng });
+    // Toque segurando não é confiável em navegador mobile (o sistema
+    // disputa com o JS e às vezes vence selecionando texto/imagem) — fluxo
+    // é só de toques: botão "+" abre o menu de tipo, depois um toque no
+    // mapa marca o ponto. `click` normal, sem ambiguidade de gesto.
+    map.on("click", (e: L.LeafletMouseEvent) => {
+      const type = placingTypeRef.current;
+      if (type === null) return;
+      setPlacingType(null);
+      const latitudeI = Math.round(e.latlng.lat * 1e7);
+      const longitudeI = Math.round(e.latlng.lng * 1e7);
+      sendMarkerRef.current(type, latitudeI, longitudeI);
     });
 
     mapRef.current = map;
@@ -211,13 +222,12 @@ export function MapView({ state, sendMarker }: Props) {
     }
   }, [state.markers]);
 
-  async function handlePickMarker(type: MarkerTypeValue) {
-    if (!pendingLatLng) return;
-    const latitudeI = Math.round(pendingLatLng.lat * 1e7);
-    const longitudeI = Math.round(pendingLatLng.lng * 1e7);
-    setPendingLatLng(null);
-    await sendMarker(type, latitudeI, longitudeI);
+  function handlePickType(type: MarkerTypeValue) {
+    setPickerOpen(false);
+    setPlacingType(type);
   }
+
+  const placingVisual = placingType !== null ? markerVisual(placingType) : null;
 
   return (
     <div className="map-wrap">
@@ -235,22 +245,39 @@ export function MapView({ state, sendMarker }: Props) {
         ))}
       </div>
 
-      {pendingLatLng && (
+      {!pickerOpen && !placingType && (
+        <button type="button" className="marker-fab" onClick={() => setPickerOpen(true)} aria-label="Marcar no mapa">
+          +
+        </button>
+      )}
+
+      {placingVisual && (
+        <div className="marker-placing-hint">
+          <span>
+            Toque no mapa pra marcar <strong>{placingVisual.label.toUpperCase()}</strong>
+          </span>
+          <button type="button" className="secondary" onClick={() => setPlacingType(null)}>
+            Cancelar
+          </button>
+        </div>
+      )}
+
+      {pickerOpen && (
         <>
-          <div className="marker-picker-backdrop" onClick={() => setPendingLatLng(null)} />
+          <div className="marker-picker-backdrop" onClick={() => setPickerOpen(false)} />
           <div className="marker-picker">
             {MARKER_OPTIONS.map((opt) => (
               <button
                 key={opt.type}
                 type="button"
                 className={`marker-picker-btn marker-picker-btn--${opt.cls}`}
-                onClick={() => handlePickMarker(opt.type)}
+                onClick={() => handlePickType(opt.type)}
               >
                 <span className="marker-picker-symbol">{opt.symbol}</span>
                 {opt.label}
               </button>
             ))}
-            <button type="button" className="secondary" onClick={() => setPendingLatLng(null)}>
+            <button type="button" className="secondary" onClick={() => setPickerOpen(false)}>
               Cancelar
             </button>
           </div>

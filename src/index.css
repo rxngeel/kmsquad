@@ -345,6 +345,11 @@ select {
   overflow: hidden;
   border: 1px solid var(--line);
   background: var(--bg-panel);
+  /* evita que o navegador tente selecionar texto/imagem do mapa em toque
+     mais longo — foi exatamente isso que atrapalhou o toque segurando. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .map-layer-switch {
@@ -537,6 +542,57 @@ select {
 
 .marker-picker-btn--perigo { border-color: var(--amber); color: var(--amber); }
 .marker-picker-btn--perigo .marker-picker-symbol { background: var(--amber); }
+
+/* Botão "+" que abre o menu de marcador — canto inferior direito, onde
+   ficava o botão de status (removido). */
+.marker-fab {
+  position: absolute;
+  z-index: 1000;
+  right: calc(14px + env(safe-area-inset-right, 0px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  width: 52px;
+  height: 52px;
+  min-height: 52px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  line-height: 1;
+  border-radius: 50%;
+  clip-path: none;
+  border-width: 2px;
+  background: var(--volt);
+  color: #0a0a0a;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Aviso de "modo marcando" — some depois do toque no mapa ou do cancelar. */
+.marker-placing-hint {
+  position: absolute;
+  z-index: 1000;
+  left: 50%;
+  top: calc(56px + env(safe-area-inset-top, 0px));
+  transform: translateX(-50%);
+  max-width: calc(100vw - 20px);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid var(--volt);
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 10px 14px;
+}
+
+.marker-placing-hint button {
+  width: auto;
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+}
 
 .footer-tap {
   text-align: center;
