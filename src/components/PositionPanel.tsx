@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { MeshState } from "../meshtastic/connection";
-import { isPhoneGpsMode } from "../meshtastic/format";
+import { gpsConfigMismatch, isPhoneGpsMode } from "../meshtastic/format";
 
 interface Props {
   state: MeshState;
@@ -14,7 +14,8 @@ export function PositionPanel({ state, sendPhonePosition }: Props) {
   const watchIdRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
-  const phoneMode = isPhoneGpsMode(state.positionConfig?.gpsMode);
+  const phoneMode = isPhoneGpsMode(state.positionConfig?.gpsMode, state.ownUser?.hwModel);
+  const gpsMismatch = gpsConfigMismatch(state.positionConfig?.gpsMode, state.ownUser?.hwModel);
 
   useEffect(() => {
     return () => stop();
@@ -79,6 +80,12 @@ export function PositionPanel({ state, sendPhonePosition }: Props) {
         Este rádio não tem GPS próprio ativo. Mantenha esta página aberta e a
         tela acesa para enviar sua posição.
       </p>
+      {gpsMismatch && (
+        <div className="error-box">
+          A config do rádio diz GPS ligado, mas esse modelo não tem GPS
+          próprio — por isso o app está usando o GPS do celular mesmo assim.
+        </div>
+      )}
       {gpsError && <div className="error-box">{gpsError}</div>}
       <div className="row">
         <span className="label">Último envio</span>

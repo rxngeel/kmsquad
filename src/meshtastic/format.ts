@@ -33,7 +33,28 @@ export function presetLabel(preset: Protobuf.Config.Config_LoRaConfig_ModemPrese
   return name ? name.replaceAll("_", " ") : String(preset);
 }
 
-export function gpsModeLabel(mode: Protobuf.Config.Config_PositionConfig_GpsMode | undefined): string {
+// gpsMode é uma flag de configuração do rádio, não uma leitura do hardware:
+// um V3 (sem chip de GPS) pode estar com gpsMode = ENABLED por engano (ex.:
+// config antiga ou copiada de outro rádio) e isso não vira GPS de verdade.
+// Para os modelos abaixo sabemos que não existe chip de GPS físico, então a
+// config é ignorada e o app usa o GPS do celular mesmo assim.
+const HW_MODELS_WITHOUT_GPS = new Set<Protobuf.Mesh.HardwareModel>([
+  Protobuf.Mesh.HardwareModel.HELTEC_V3,
+]);
+
+export function hwModelLabel(hwModel: Protobuf.Mesh.HardwareModel | undefined): string {
+  if (hwModel === undefined) return "—";
+  const name = Protobuf.Mesh.HardwareModel[hwModel];
+  return name ? name.replaceAll("_", " ") : String(hwModel);
+}
+
+export function gpsModeLabel(
+  mode: Protobuf.Config.Config_PositionConfig_GpsMode | undefined,
+  hwModel: Protobuf.Mesh.HardwareModel | undefined,
+): string {
+  if (hwModel !== undefined && HW_MODELS_WITHOUT_GPS.has(hwModel)) {
+    return "RÁDIO SEM GPS (modo V3 — usa o GPS do celular)";
+  }
   switch (mode) {
     case Protobuf.Config.Config_PositionConfig_GpsMode.ENABLED:
       return "GPS DO RÁDIO ATIVO (modo V4)";
@@ -46,8 +67,24 @@ export function gpsModeLabel(mode: Protobuf.Config.Config_PositionConfig_GpsMode
   }
 }
 
-export function isPhoneGpsMode(mode: Protobuf.Config.Config_PositionConfig_GpsMode | undefined): boolean {
+export function isPhoneGpsMode(
+  mode: Protobuf.Config.Config_PositionConfig_GpsMode | undefined,
+  hwModel: Protobuf.Mesh.HardwareModel | undefined,
+): boolean {
+  if (hwModel !== undefined && HW_MODELS_WITHOUT_GPS.has(hwModel)) return true;
   return mode !== Protobuf.Config.Config_PositionConfig_GpsMode.ENABLED;
+}
+
+/** A config do rádio diz que o GPS está ligado, mas este modelo não tem GPS físico. */
+export function gpsConfigMismatch(
+  mode: Protobuf.Config.Config_PositionConfig_GpsMode | undefined,
+  hwModel: Protobuf.Mesh.HardwareModel | undefined,
+): boolean {
+  return (
+    hwModel !== undefined &&
+    HW_MODELS_WITHOUT_GPS.has(hwModel) &&
+    mode === Protobuf.Config.Config_PositionConfig_GpsMode.ENABLED
+  );
 }
 
 export function formatLatLon(latitudeI?: number, longitudeI?: number): string {
