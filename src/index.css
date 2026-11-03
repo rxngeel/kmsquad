@@ -8,6 +8,7 @@
   --text-dim: #8a8a8a;
   --danger: #ff4d4d;
   --ok: #3ddc84;
+  --amber: #ffb020;
   /* corte diagonal nos cantos — linguagem visual "HUD tático" usada em
      painéis/botões no lugar de cantos arredondados comuns */
   --cut-lg: 16px;
@@ -102,8 +103,13 @@ body {
   pointer-events: auto;
 }
 
-.hud-menu-btn {
+.hud-topbar-actions {
   margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.hud-menu-btn {
   width: 44px;
   min-height: 44px;
   padding: 0;
@@ -112,6 +118,24 @@ body {
   background: rgba(10, 10, 10, 0.75);
   border-color: var(--line);
   color: var(--volt);
+}
+
+.hud-menu-btn--active {
+  background: var(--volt);
+  color: #0a0a0a;
+}
+
+.hud-compass-error {
+  position: absolute;
+  z-index: 1000;
+  top: calc(56px + env(safe-area-inset-top, 0px));
+  left: calc(10px + env(safe-area-inset-left, 0px));
+  max-width: 220px;
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-size: 0.75rem;
+  padding: 8px 10px;
 }
 
 .hud-drawer-backdrop {
@@ -384,6 +408,7 @@ select {
      carrega depois do nosso e ganha o empate, quebrando a centralização
      (bug relatado: texto fora de posição). */
   display: flex !important;
+  position: relative;
   align-items: center;
   justify-content: center;
   width: 44px;
@@ -396,7 +421,7 @@ select {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  overflow: hidden;
+  overflow: visible;
   white-space: nowrap;
 }
 
@@ -416,6 +441,102 @@ select {
 .map-marker--stale {
   opacity: 0.45;
 }
+
+/* Seta de direção (bússola) — gira em torno do centro do marcador. */
+.map-marker-arrow-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.map-marker-arrow {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid var(--volt);
+}
+
+/* Marcadores de squad (CONTATO/OBJETIVO/PONTO DE ENCONTRO/PERIGO) — losango
+   pra diferenciar logo de cara do círculo dos jogadores. */
+.map-pin {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  color: #0a0a0a;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.map-pin--contato { background: var(--danger); }
+.map-pin--objetivo { background: var(--volt); }
+.map-pin--encontro { background: var(--ok); }
+.map-pin--perigo { background: var(--amber); }
+
+/* Menu de escolha de marcador — aparece depois do toque segurando no mapa. */
+.marker-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.marker-picker {
+  position: absolute;
+  z-index: 1101;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: min(360px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--volt);
+  padding: 12px;
+  clip-path: polygon(var(--cut-lg) 0, 100% 0, 100% calc(100% - var(--cut-lg)), calc(100% - var(--cut-lg)) 100%, 0 100%, 0 var(--cut-lg));
+}
+
+.marker-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-start;
+  border-width: 2px;
+}
+
+.marker-picker-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  color: #0a0a0a;
+  font-weight: 700;
+}
+
+.marker-picker-btn--contato { border-color: var(--danger); color: var(--danger); }
+.marker-picker-btn--contato .marker-picker-symbol { background: var(--danger); }
+
+.marker-picker-btn--objetivo { border-color: var(--volt); color: var(--volt); }
+.marker-picker-btn--objetivo .marker-picker-symbol { background: var(--volt); }
+
+.marker-picker-btn--encontro { border-color: var(--ok); color: var(--ok); }
+.marker-picker-btn--encontro .marker-picker-symbol { background: var(--ok); }
+
+.marker-picker-btn--perigo { border-color: var(--amber); color: var(--amber); }
+.marker-picker-btn--perigo .marker-picker-symbol { background: var(--amber); }
 
 .footer-tap {
   text-align: center;

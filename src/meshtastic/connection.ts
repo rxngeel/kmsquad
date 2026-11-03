@@ -3,7 +3,14 @@ import { MeshDevice, Protobuf, Types } from "@meshtastic/core";
 import { TransportWebBluetooth } from "@meshtastic/transport-web-bluetooth";
 import { buildSquadChannelSettings, decodeChannelUrl, encodeChannelUrl } from "./channelUrl";
 import { isPhoneGpsMode } from "./format";
-import { decodeMessage, encodeStatus, type PlayerStatusValue } from "./protocol";
+import {
+  decodeMessage,
+  encodeDirection,
+  encodeMarker,
+  encodeStatus,
+  type MarkerTypeValue,
+  type PlayerStatusValue,
+} from "./protocol";
 
 export type ConnectionStatus =
   | "desconectado"
@@ -11,6 +18,15 @@ export type ConnectionStatus =
   | "configurando"
   | "configurado"
   | "erro";
+
+export interface MapMarker {
+  id: number;
+  authorNodeNum: number;
+  type: MarkerTypeValue;
+  latitudeI: number;
+  longitudeI: number;
+  time: number;
+}
 
 export interface MeshState {
   status: ConnectionStatus;
@@ -24,6 +40,10 @@ export interface MeshState {
   channels: Map<number, Protobuf.Channel.Channel>;
   nodes: Map<number, Protobuf.Mesh.NodeInfo>;
   playerStatus: Map<number, PlayerStatusValue>;
+  /** chave: `${autor}:${id}` */
+  markers: Map<string, MapMarker>;
+  /** direção (graus, 0=norte) de cada nó, incluindo o próprio */
+  headings: Map<number, number>;
   messages: Array<{
     id: number;
     from: number;
@@ -40,6 +60,8 @@ export function createInitialState(): MeshState {
     channels: new Map(),
     nodes: new Map(),
     playerStatus: new Map(),
+    markers: new Map(),
+    headings: new Map(),
     messages: [],
     debugLog: [],
   };
@@ -57,6 +79,7 @@ export class MeshtasticConnection {
   private state: MeshState = createInitialState();
   private listeners = new Set<Listener>();
   private messageIdCounter = 0;
+  private markerIdCounter = Math.floor(Math.random() * 256);
 
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
@@ -226,12 +249,27 @@ export class MeshtasticConnection {
             this.log(`Status de #${packet.from}: ${decoded.status}`);
             break;
           }
-          case "marker":
-            this.log(`[protocolo] marcador de #${packet.from} recebido (ainda sem UI pra mostrar)`);
+          case "marker": {
+            const markers = new Map(this.state.markers);
+            const key = `${packet.from}:${decoded.marker.id}`;
+            markers.set(key, {
+              id: decoded.marker.id,
+              authorNodeNum: packet.from,
+              type: decoded.marker.type,
+              latitudeI: decoded.marker.latitudeI,
+              longitudeI: decoded.marker.longitudeI,
+              time: Date.now(),
+            });
+            this.setState({ markers });
+            this.log(`Marcador de #${packet.from}: tipo ${decoded.marker.type}`);
             break;
-          case "direction":
-            this.log(`[protocolo] direção de #${packet.from}: ${decoded.headingDegrees.toFixed(0)}°`);
+          }
+          case "direction": {
+            const headings = new Map(this.state.headings);
+            headings.set(packet.from, decoded.headingDegrees);
+            this.setState({ headings });
             break;
+          }
           case "desconhecido":
             this.log(`[protocolo] tipo de mensagem desconhecido (0x${decoded.messageType.toString(16)}) de #${packet.from}`);
             break;
@@ -277,6 +315,42 @@ export class MeshtasticConnection {
       this.setState({ playerStatus });
     }
     this.log(`Status alterado para ${status}.`);
+  }
+
+  /** Cria e avisa o squad de um marcador (CONTATO, OBJETIVO, PONTO DE ENCONTRO, PERIGO). */
+  async sendMarker(type: MarkerTypeValue, latitudeI: number, longitudeI: number): Promise<void> {
+    if (!this.device) return;
+    this.markerIdCounter = (this.markerIdCounter + 1) & 0xff;
+    const id = this.markerIdCounter;
+    const bytes = encodeMarker({ type, id, latitudeI, longitudeI });
+    await this.device.sendPacket(bytes, Protobuf.Portnums.PortNum.PRIVATE_APP, "broadcast", 0);
+
+    if (this.state.myNodeNum !== undefined) {
+      const markers = new Map(this.state.markers);
+      markers.set(`${this.state.myNodeNum}:${id}`, {
+        id,
+        authorNodeNum: this.state.myNodeNum,
+        type,
+        latitudeI,
+        longitudeI,
+        time: Date.now(),
+      });
+      this.setState({ markers });
+    }
+    this.log(`Marcador tipo ${type} criado.`);
+  }
+
+  /** Avisa o squad da direção pra onde o jogador tá virado (bússola). Chamado com throttle pelo hook de bússola. */
+  async sendDirection(headingDegrees: number): Promise<void> {
+    if (!this.device) return;
+    const bytes = encodeDirection(headingDegrees);
+    await this.device.sendPacket(bytes, Protobuf.Portnums.PortNum.PRIVATE_APP, "broadcast", 0);
+
+    if (this.state.myNodeNum !== undefined) {
+      const headings = new Map(this.state.headings);
+      headings.set(this.state.myNodeNum, headingDegrees);
+      this.setState({ headings });
+    }
   }
 
   /** Modo V3: envia a posição do GPS do celular para o próprio rádio retransmitir. */

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Protobuf } from "@meshtastic/core";
 import { MeshtasticConnection, createInitialState, type MeshState } from "../meshtastic/connection";
-import type { PlayerStatusValue } from "../meshtastic/protocol";
+import type { MarkerTypeValue, PlayerStatusValue } from "../meshtastic/protocol";
 
 export function useMeshtastic() {
   const [connection] = useState(() => new MeshtasticConnection());
@@ -29,5 +29,8 @@ export function useMeshtastic() {
     }) => connection.setPositionSettings(patch),
     sendStatus: (status: PlayerStatusValue) => connection.sendStatus(status),
     setIdentity: (longName: string, shortName: string) => connection.setIdentity(longName, shortName),
+    sendMarker: (type: MarkerTypeValue, latitudeI: number, longitudeI: number) =>
+      connection.sendMarker(type, latitudeI, longitudeI),
+    sendDirection: (headingDegrees: number) => connection.sendDirection(headingDegrees),
   };
 }

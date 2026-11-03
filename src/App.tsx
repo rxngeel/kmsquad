@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useMeshtastic } from "./hooks/useMeshtastic";
+import { useCompass } from "./hooks/useCompass";
 import { ConnectPanel } from "./components/ConnectPanel";
 import { MapView } from "./components/MapView";
 import { HudMenu } from "./components/HudMenu";
@@ -25,11 +26,15 @@ export default function App() {
     setLoraSettings,
     setPositionSettings,
     setIdentity,
+    sendMarker,
+    sendDirection,
   } = useMeshtastic();
   const [debugOpen, setDebugOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const tapCountRef = useRef(0);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleHeading = useCallback((degrees: number) => sendDirection(degrees), [sendDirection]);
+  const compass = useCompass({ onHeading: handleHeading });
 
   const connected = state.status === "configurado";
 
@@ -72,15 +77,26 @@ export default function App() {
 
   return (
     <div className="hud-shell">
-      <MapView state={state} />
+      <MapView state={state} sendMarker={sendMarker} />
       <div className="hud-frame" />
 
       <div className="hud-topbar">
         <span className={`badge ${badge.cls}`}>{badge.label}</span>
-        <button className="hud-menu-btn" onClick={() => setMenuOpen(true)} aria-label="Abrir menu">
-          ☰
-        </button>
+        <div className="hud-topbar-actions">
+          <button
+            className={`hud-menu-btn ${compass.enabled ? "hud-menu-btn--active" : ""}`}
+            onClick={compass.toggle}
+            aria-label={compass.enabled ? "Desativar bússola" : "Ativar bússola"}
+            title="Bússola"
+          >
+            ⊕
+          </button>
+          <button className="hud-menu-btn" onClick={() => setMenuOpen(true)} aria-label="Abrir menu">
+            ☰
+          </button>
+        </div>
       </div>
+      {compass.error && <div className="hud-compass-error">{compass.error}</div>}
 
       {menuOpen && (
         <HudMenu

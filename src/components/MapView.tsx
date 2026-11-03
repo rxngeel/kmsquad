@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { MeshState } from "../meshtastic/connection";
+import type { MapMarker, MeshState } from "../meshtastic/connection";
 import { isPositionStale, labelFor } from "../meshtastic/format";
+import { MarkerType, type MarkerTypeValue } from "../meshtastic/protocol";
 
 // Airsoft Company (Curitiba) é o campo de referência pra teste — provisório
 // até o Ran mandar a localização exata. Troca pra fase de mapa offline.
@@ -45,17 +46,31 @@ const BASE_LAYERS: Record<BaseLayerId, { label: string; url: string; options: L.
   },
 };
 
-interface Props {
-  state: MeshState;
+const MARKER_OPTIONS: Array<{ type: MarkerTypeValue; label: string; symbol: string; cls: string }> = [
+  { type: MarkerType.CONTATO, label: "Contato", symbol: "!", cls: "contato" },
+  { type: MarkerType.OBJETIVO, label: "Objetivo", symbol: "★", cls: "objetivo" },
+  { type: MarkerType.PONTO_DE_ENCONTRO, label: "Ponto de encontro", symbol: "P", cls: "encontro" },
+  { type: MarkerType.PERIGO, label: "Perigo", symbol: "⚠", cls: "perigo" },
+];
+
+function markerVisual(type: MarkerTypeValue) {
+  return MARKER_OPTIONS.find((o) => o.type === type) ?? MARKER_OPTIONS[0];
 }
 
-export function MapView({ state }: Props) {
+interface Props {
+  state: MeshState;
+  sendMarker: (type: MarkerTypeValue, latitudeI: number, longitudeI: number) => Promise<void>;
+}
+
+export function MapView({ state, sendMarker }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef(new Map<number, L.Marker>());
+  const pinsRef = useRef(new Map<string, L.Marker>());
   const hasCenteredRef = useRef(false);
   const baseLayerRef = useRef<L.TileLayer | null>(null);
   const [baseLayerId, setBaseLayerId] = useState<BaseLayerId>("relevo");
+  const [pendingLatLng, setPendingLatLng] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -71,6 +86,13 @@ export function MapView({ state }: Props) {
     map.attributionControl.setPrefix(false);
     map.attributionControl.setPosition("bottomleft");
 
+    // Toque segurando no mapa (Leaflet já simula "contextmenu" em toque
+    // longo no Safari/WebKit mobile — é o que o Bluefy usa) abre o menu de
+    // marcador rápido. CONTATO precisa ser o mais rápido possível de marcar.
+    map.on("contextmenu", (e: L.LeafletMouseEvent) => {
+      setPendingLatLng({ lat: e.latlng.lat, lng: e.latlng.lng });
+    });
+
     mapRef.current = map;
 
     return () => {
@@ -78,6 +100,7 @@ export function MapView({ state }: Props) {
       mapRef.current = null;
       baseLayerRef.current = null;
       markersRef.current.clear();
+      pinsRef.current.clear();
       hasCenteredRef.current = false;
     };
   }, []);
@@ -109,6 +132,12 @@ export function MapView({ state }: Props) {
       const isSelf = node.num === state.myNodeNum;
       const stale = isPositionStale(pos.time);
       const label = labelFor(node);
+      const heading = state.headings.get(node.num);
+
+      const arrowHtml =
+        heading !== undefined
+          ? `<div class="map-marker-arrow-wrap" style="transform: rotate(${heading}deg)"><div class="map-marker-arrow"></div></div>`
+          : "";
 
       const icon = L.divIcon({
         className: [
@@ -118,7 +147,7 @@ export function MapView({ state }: Props) {
         ]
           .filter(Boolean)
           .join(" "),
-        html: `<span>${label}</span>`,
+        html: `${arrowHtml}<span>${label}</span>`,
         iconSize: [44, 44],
       });
 
@@ -143,7 +172,52 @@ export function MapView({ state }: Props) {
         markersRef.current.delete(num);
       }
     }
-  }, [state.nodes, state.myNodeNum]);
+  }, [state.nodes, state.myNodeNum, state.headings]);
+
+  // Marcadores (CONTATO/OBJETIVO/PONTO DE ENCONTRO/PERIGO) criados por
+  // qualquer um do squad — camada separada dos jogadores.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const seen = new Set<string>();
+
+    for (const [key, marker] of state.markers as Map<string, MapMarker>) {
+      seen.add(key);
+      const visual = markerVisual(marker.type);
+      const lat = marker.latitudeI / 1e7;
+      const lon = marker.longitudeI / 1e7;
+
+      const icon = L.divIcon({
+        className: `map-pin map-pin--${visual.cls}`,
+        html: `<span>${visual.symbol}</span>`,
+        iconSize: [32, 32],
+      });
+
+      const existing = pinsRef.current.get(key);
+      if (existing) {
+        existing.setLatLng([lat, lon]);
+      } else {
+        const leafletMarker = L.marker([lat, lon], { icon, title: visual.label }).addTo(map);
+        pinsRef.current.set(key, leafletMarker);
+      }
+    }
+
+    for (const [key, marker] of pinsRef.current) {
+      if (!seen.has(key)) {
+        marker.remove();
+        pinsRef.current.delete(key);
+      }
+    }
+  }, [state.markers]);
+
+  async function handlePickMarker(type: MarkerTypeValue) {
+    if (!pendingLatLng) return;
+    const latitudeI = Math.round(pendingLatLng.lat * 1e7);
+    const longitudeI = Math.round(pendingLatLng.lng * 1e7);
+    setPendingLatLng(null);
+    await sendMarker(type, latitudeI, longitudeI);
+  }
 
   return (
     <div className="map-wrap">
@@ -160,6 +234,28 @@ export function MapView({ state }: Props) {
           </button>
         ))}
       </div>
+
+      {pendingLatLng && (
+        <>
+          <div className="marker-picker-backdrop" onClick={() => setPendingLatLng(null)} />
+          <div className="marker-picker">
+            {MARKER_OPTIONS.map((opt) => (
+              <button
+                key={opt.type}
+                type="button"
+                className={`marker-picker-btn marker-picker-btn--${opt.cls}`}
+                onClick={() => handlePickMarker(opt.type)}
+              >
+                <span className="marker-picker-symbol">{opt.symbol}</span>
+                {opt.label}
+              </button>
+            ))}
+            <button type="button" className="secondary" onClick={() => setPendingLatLng(null)}>
+              Cancelar
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
