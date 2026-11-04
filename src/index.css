@@ -261,6 +261,18 @@ body {
   background: rgba(10, 10, 10, 0.75);
   border-color: var(--line);
   color: var(--volt);
+  /* Sem isso, o botão fica "inline-block" (padrão do navegador pra <button>)
+     — o de camada do mapa, por estar um nível mais fundo (dentro de
+     .hud-layers-wrap, não filho direto do flex da barra), não ganhava o
+     "desinlineamento" automático que os outros recebem de bônus por serem
+     filho direto de um container flex. Isso cria uma folga fantasma embaixo
+     do botão (efeito clássico de inline-block dentro de um bloco comum),
+     deixando o wrap ~2.8px mais alto que o botão — o ícone ficava
+     visualmente puxado pra cima dentro dessa folga. display:flex explícito
+     tira a dependência desse comportamento implícito. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hud-menu-btn--active {
