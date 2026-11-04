@@ -8,6 +8,7 @@ import { DebugScreen } from "./components/DebugScreen";
 import { NodeListPanel } from "./components/NodeListPanel";
 import { ChatPanel } from "./components/ChatPanel";
 import { KmtakWordmark } from "./components/Brand";
+import { IconChat, IconLayers } from "./components/Icons";
 import type { MeshState } from "./meshtastic/connection";
 import { labelFor } from "./meshtastic/format";
 
@@ -127,7 +128,7 @@ export default function App() {
             {otherNodesCount}
           </button>
           <button className="hud-menu-btn" onClick={() => setChatOpen(true)} aria-label="Mensagens" title="Mensagens">
-            <span className="hud-icon-chat" />
+            <IconChat className="hud-icon-svg" />
           </button>
           <button
             className={`hud-menu-btn ${gridEnabled ? "hud-menu-btn--active" : ""}`}
@@ -149,10 +150,7 @@ export default function App() {
           </button>
           <div className="hud-layers-wrap">
             <button className="hud-menu-btn" onClick={() => setLayersOpen((v) => !v)} aria-label="Trocar camada do mapa" title="Camada do mapa">
-              <span className="hud-icon-layers">
-                <span />
-                <span />
-              </span>
+              <IconLayers className="hud-icon-svg" />
             </button>
             {layersOpen && (
               <>

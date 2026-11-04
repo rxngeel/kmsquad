@@ -297,12 +297,13 @@ body {
   margin-left: -4px;
 }
 
-.hud-icon-chat {
-  display: inline-block;
+/* Ícones em SVG (ver src/components/Icons.tsx) — mensagens e camadas, que
+   antes usavam `clip-path` sobre `border` e saíam com o contorno quebrado
+   em pedaços soltos em vez da forma inteira. */
+.hud-icon-svg {
+  display: block;
   width: 18px;
-  height: 14px;
-  border: 1.6px solid currentColor;
-  clip-path: polygon(0 0, 100% 0, 100% 70%, 38% 70%, 22% 100%, 22% 70%, 0 70%);
+  height: 18px;
 }
 
 .hud-icon-grid {
@@ -314,27 +315,6 @@ body {
     linear-gradient(to bottom, currentColor 1.4px, transparent 1.4px);
   background-size: 33.33% 33.33%;
   background-position: -0.8px -0.8px;
-}
-
-.hud-icon-layers {
-  position: relative;
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-}
-
-.hud-icon-layers span {
-  position: absolute;
-  left: 50%;
-  width: 15px;
-  height: 15px;
-  margin-left: -7.5px;
-  border: 1.6px solid currentColor;
-  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-}
-
-.hud-icon-layers span:first-child {
-  top: 0;
 }
 
 .hud-icon-download {
@@ -388,11 +368,6 @@ body {
   height: 100%;
   background: var(--volt);
   transition: width 0.2s ease;
-}
-
-.hud-icon-layers span:last-child {
-  top: 6px;
-  opacity: 0.55;
 }
 
 /* Bússola: canto superior esquerdo, estilo dial — um triângulo que gira de
@@ -792,8 +767,12 @@ select {
   border-bottom: 1px solid var(--line) !important;
   width: 36px !important;
   height: 36px !important;
-  line-height: 36px !important;
-  font-size: 1.1rem;
+  /* Conteúdo agora é SVG (ver SVG_PLUS/SVG_MINUS/SVG_LOCATE em MapView.tsx),
+     não texto — flex centraliza de verdade, a antiga centralização por
+     line-height era só pra texto e deixava o glifo um pouco fora do centro. */
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
 }
 
 .leaflet-bar a:last-child {
@@ -803,10 +782,6 @@ select {
 .leaflet-bar a.leaflet-disabled {
   background: rgba(10, 10, 10, 0.5) !important;
   color: var(--text-dim) !important;
-}
-
-.map-locate-btn {
-  font-size: 1rem !important;
 }
 
 .leaflet-control-scale-line {
@@ -994,14 +969,17 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
-  line-height: 1;
   border-radius: 50%;
   clip-path: none;
   border-width: 2px;
   background: var(--volt);
   color: #0a0a0a;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.marker-fab-icon {
+  width: 26px;
+  height: 26px;
 }
 
 /* Aviso de "modo marcando" — some depois do toque no mapa ou do cancelar. */

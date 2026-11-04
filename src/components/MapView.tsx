@@ -6,6 +6,7 @@ import { isPositionStale, labelFor } from "../meshtastic/format";
 import { MarkerType, type MarkerTypeValue } from "../meshtastic/protocol";
 import { clearFieldImage, loadFieldImage, saveFieldImage } from "../offline/fieldImageStore";
 import { OfflineMapPanel } from "./OfflineMapPanel";
+import { IconPlus } from "./Icons";
 
 // Airsoft Company (Curitiba) é o campo de referência pra teste — provisório
 // até o Ran mandar a localização exata. Troca pra fase de mapa offline.
@@ -52,6 +53,17 @@ export const BASE_LAYERS: Record<BaseLayerId, { label: string; url: string; opti
 // militar de verdade), só um graticule simples pra dar referência visual
 // no mapa, estilo ATAK. MGRS é um projeto futuro maior (precisa de lib de
 // conversão de coordenada) se o Ran quiser de verdade mais pra frente.
+// Os controles de zoom/locate do Leaflet são DOM puro (criados via
+// `L.DomUtil`, fora do React) — por isso os ícones deles são strings de SVG
+// em vez de componente. Texto puro ("+", "◎") não fica centralizado de
+// verdade na caixa do botão (medido pixel a pixel), daí o vetor.
+const SVG_PLUS =
+  '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="4" x2="12" y2="20"/><line x1="4" y1="12" x2="20" y2="12"/></svg>';
+const SVG_MINUS =
+  '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="12" x2="20" y2="12"/></svg>';
+const SVG_LOCATE =
+  '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/></svg>';
+
 const GRID_STYLE: L.PolylineOptions = {
   color: "#c6ee00",
   weight: 1,
@@ -165,7 +177,12 @@ export function MapView({
     // acima dela, perto do canto.
     L.control.scale({ position: "bottomleft", metric: true, imperial: false, maxWidth: 110 }).addTo(map);
 
-    L.control.zoom({ position: "bottomleft" }).addTo(map);
+    const zoomControl = L.control.zoom({ position: "bottomleft" }).addTo(map);
+    const zoomContainer = zoomControl.getContainer();
+    const zoomInLink = zoomContainer?.querySelector(".leaflet-control-zoom-in");
+    const zoomOutLink = zoomContainer?.querySelector(".leaflet-control-zoom-out");
+    if (zoomInLink) zoomInLink.innerHTML = SVG_PLUS;
+    if (zoomOutLink) zoomOutLink.innerHTML = SVG_MINUS;
 
     // Botão de centralizar na própria posição — fica acima de tudo nesse
     // canto (é o que mais se toca durante o jogo), estilo "locate" do ATAK.
@@ -178,7 +195,7 @@ export function MapView({
         link.title = "Centralizar na minha posição";
         link.setAttribute("aria-label", "Centralizar na minha posição");
         link.setAttribute("role", "button");
-        link.innerHTML = "◎";
+        link.innerHTML = SVG_LOCATE;
         L.DomEvent.disableClickPropagation(container);
         L.DomEvent.on(link, "click", (e: Event) => {
           L.DomEvent.preventDefault(e);
@@ -542,7 +559,7 @@ export function MapView({
 
       {!pickerOpen && !placingType && !rulerOn && (
         <button type="button" className="marker-fab" onClick={() => setPickerOpen(true)} aria-label="Marcar no mapa">
-          +
+          <IconPlus className="marker-fab-icon" />
         </button>
       )}
 
