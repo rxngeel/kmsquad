@@ -243,6 +243,12 @@ body {
 .hud-topbar-actions {
   margin-left: auto;
   display: flex;
+  /* Sem isso, o flex estica cada botão (align-items padrão é "stretch")
+     até a altura do item mais alto da fileira — os círculos viravam
+     elipses de 44x46.8px em vez de 44x44 de verdade, o que faz o ícone
+     parecer fora do centro mesmo estando centralizado dentro da própria
+     caixa esticada. */
+  align-items: center;
   gap: 8px;
 }
 
