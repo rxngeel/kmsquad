@@ -72,7 +72,6 @@ export default function App() {
   if (!connected) {
     return (
       <div className="connect-screen">
-        <div className="hud-frame" />
         <div className="connect-hero">
           <h1 className="connect-logo">
             K<span style={{ color: "var(--volt)" }}>-TAK</span>
@@ -100,7 +99,6 @@ export default function App() {
         baseLayerId={baseLayerId}
         gridEnabled={gridEnabled}
       />
-      <div className="hud-frame" />
       <div className="hud-self-badge">{ownLabel}</div>
 
       <div className="hud-topbar">

@@ -9,10 +9,12 @@
   --danger: #ff4d4d;
   --ok: #3ddc84;
   --amber: #ffb020;
-  /* corte diagonal nos cantos — linguagem visual "HUD tático" usada em
-     painéis/botões no lugar de cantos arredondados comuns */
-  --cut-lg: 16px;
-  --cut-sm: 6px;
+  /* raio de borda padrão do app — trocado de canto chanfrado (estilo "HUD
+     tático") pra arredondado em 2026-11-04, a pedido do Ran. */
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
 }
 
 * {
@@ -58,6 +60,7 @@ body {
   flex-direction: column;
   justify-content: center;
   gap: 28px;
+  overflow-y: auto;
 }
 
 .connect-hero {
@@ -65,33 +68,138 @@ body {
 }
 
 .connect-logo {
-  font-size: 3rem;
+  font-size: 2.2rem;
   margin: 0;
   line-height: 1;
 }
 
 .connect-tagline {
   color: var(--text-dim);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   letter-spacing: 0.18em;
-  margin: 10px 0 0;
+  margin: 8px 0 0;
 }
 
 .connect-card {
-  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Círculo com anéis concêntricos, estilo tela de pareamento Bluetooth de
+   apps de hardware (referência que o Ran mandou) — substitui a antiga
+   "caixa" de status por um visual mais limpo. */
+.connect-radar {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.connect-radar-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(198, 238, 0, 0.2);
+}
+
+.connect-radar-ring--outer {
+  inset: 0;
+}
+
+.connect-radar-ring--inner {
+  inset: 26px;
+  border-color: rgba(198, 238, 0, 0.35);
+}
+
+.connect-radar-core {
+  position: relative;
+  z-index: 1;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: rgba(198, 238, 0, 0.08);
+  border: 2px solid var(--volt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.connect-radar-core span {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--volt);
+}
+
+@keyframes connect-radar-pulse {
+  0% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+.connect-radar--active .connect-radar-ring--outer,
+.connect-radar--active .connect-radar-ring--inner {
+  animation: connect-radar-pulse 1.6s ease-out infinite;
+}
+
+.connect-radar--active .connect-radar-ring--inner {
+  animation-delay: 0.3s;
+}
+
+.connect-status {
+  color: var(--text);
+  font-size: 0.95rem;
+  margin: 0 0 4px;
+}
+
+.connect-device {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin: 0 0 14px;
 }
 
 .connect-btn {
-  margin-top: 14px;
+  margin-top: 18px;
 }
 
 .connect-hint {
-  margin: 14px 0 0;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
+  margin: 18px 0 0;
   color: var(--text-dim);
   font-size: 0.78rem;
   line-height: 1.5;
+}
+
+/* Celular na horizontal (uso principal do app) tem bem menos altura —
+   encolhe o círculo e os espaços pra tudo caber sem cortar. Precisa vir
+   DEPOIS das regras acima (mesma especificidade — a ordem no arquivo que
+   decide quem ganha). */
+@media (max-height: 560px) {
+  .connect-screen {
+    gap: 14px;
+    padding-top: 16px;
+    padding-bottom: 20px;
+  }
+  .connect-radar {
+    width: 110px;
+    height: 110px;
+    margin-bottom: 10px;
+  }
+  .connect-radar-ring--inner {
+    inset: 16px;
+  }
+  .connect-radar-core {
+    width: 58px;
+    height: 58px;
+  }
+  .connect-radar-core span {
+    font-size: 1.6rem;
+  }
+  .connect-hint {
+    margin-top: 10px;
+    font-size: 0.72rem;
+  }
 }
 
 /* HUD em jogo — mapa em tela cheia, pensado pra uso com o celular na horizontal. */
@@ -109,27 +217,6 @@ body {
   border-radius: 0;
   border: none;
   margin: 0;
-}
-
-/* Moldura de cantos tipo mira/viewfinder — só decorativo, não captura toque. */
-.hud-frame {
-  position: absolute;
-  inset: 0;
-  z-index: 999;
-  pointer-events: none;
-  --hf-b: 3px;
-  --hf-len: 26px;
-  --hf-in: 10px;
-  opacity: 0.55;
-  background:
-    linear-gradient(var(--volt), var(--volt)) left var(--hf-in) top var(--hf-in) / var(--hf-len) var(--hf-b) no-repeat,
-    linear-gradient(var(--volt), var(--volt)) left var(--hf-in) top var(--hf-in) / var(--hf-b) var(--hf-len) no-repeat,
-    linear-gradient(var(--volt), var(--volt)) right var(--hf-in) top var(--hf-in) / var(--hf-len) var(--hf-b) no-repeat,
-    linear-gradient(var(--volt), var(--volt)) right var(--hf-in) top var(--hf-in) / var(--hf-b) var(--hf-len) no-repeat,
-    linear-gradient(var(--volt), var(--volt)) left var(--hf-in) bottom var(--hf-in) / var(--hf-len) var(--hf-b) no-repeat,
-    linear-gradient(var(--volt), var(--volt)) left var(--hf-in) bottom var(--hf-in) / var(--hf-b) var(--hf-len) no-repeat,
-    linear-gradient(var(--volt), var(--volt)) right var(--hf-in) bottom var(--hf-in) / var(--hf-len) var(--hf-b) no-repeat,
-    linear-gradient(var(--volt), var(--volt)) right var(--hf-in) bottom var(--hf-in) / var(--hf-b) var(--hf-len) no-repeat;
 }
 
 .hud-topbar {
@@ -161,7 +248,7 @@ body {
   min-height: 44px;
   padding: 0;
   font-size: 1.3rem;
-  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+  border-radius: 50%;
   background: rgba(10, 10, 10, 0.75);
   border-color: var(--line);
   color: var(--volt);
@@ -175,11 +262,11 @@ body {
 .hud-nodes-btn {
   width: auto;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 14px;
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+  border-radius: var(--radius-pill);
   background: rgba(10, 10, 10, 0.75);
   border-color: var(--line);
   color: var(--volt);
@@ -368,6 +455,7 @@ body {
   background: var(--bg-panel);
   border-color: var(--line);
   border-left: 3px solid var(--volt);
+  border-radius: var(--radius-lg);
   color: var(--text);
 }
 
@@ -418,7 +506,7 @@ button {
   background: transparent;
   color: var(--volt);
   padding: 14px 20px;
-  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% calc(100% - var(--cut-sm)), calc(100% - var(--cut-sm)) 100%, 0 100%, 0 var(--cut-sm));
+  border-radius: var(--radius-pill);
   cursor: pointer;
   min-height: 48px;
   width: 100%;
@@ -443,7 +531,7 @@ button.secondary {
   background: var(--bg-panel);
   border: 1px solid var(--line);
   border-left: 3px solid var(--volt);
-  clip-path: polygon(var(--cut-lg) 0, 100% 0, 100% calc(100% - var(--cut-lg)), calc(100% - var(--cut-lg)) 100%, 0 100%, 0 var(--cut-lg));
+  border-radius: var(--radius-lg);
   padding: 16px;
   margin-bottom: 14px;
 }
@@ -476,7 +564,7 @@ button.secondary {
 .badge {
   display: inline-block;
   padding: 3px 10px;
-  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut-sm));
+  border-radius: var(--radius-pill);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -491,7 +579,7 @@ button.secondary {
 .node-card {
   background: var(--bg-panel-raised);
   border-left: 2px solid var(--line);
-  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% calc(100% - var(--cut-sm)), calc(100% - var(--cut-sm)) 100%, 0 100%, 0 var(--cut-sm));
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
   margin-bottom: 8px;
 }
@@ -516,8 +604,8 @@ button.secondary {
 }
 
 .msg {
-  padding: 8px 10px;
-  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut-sm));
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
   font-size: 0.9rem;
   max-width: 85%;
 }
@@ -540,8 +628,8 @@ select {
   background: var(--bg-panel-raised);
   border: 1px solid var(--line);
   color: var(--text);
-  padding: 12px;
-  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut-sm));
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
   font-size: 1rem;
   margin-bottom: 10px;
   font-family: inherit;
@@ -550,8 +638,8 @@ select {
 .error-box {
   border: 1px solid var(--danger);
   color: var(--danger);
-  padding: 10px 12px;
-  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut-sm));
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   margin-bottom: 12px;
 }
@@ -597,7 +685,7 @@ select {
   gap: 4px;
   background: rgba(10, 10, 10, 0.9);
   border: 1px solid var(--line);
-  clip-path: polygon(var(--cut-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut-sm));
+  border-radius: var(--radius-sm);
   padding: 4px;
   pointer-events: auto;
 }
@@ -794,7 +882,7 @@ select {
   border: 1px solid var(--line);
   border-left: 3px solid var(--volt);
   padding: 12px;
-  clip-path: polygon(var(--cut-lg) 0, 100% 0, 100% calc(100% - var(--cut-lg)), calc(100% - var(--cut-lg)) 100%, 0 100%, 0 var(--cut-lg));
+  border-radius: var(--radius-lg);
 }
 
 .marker-picker-btn {
@@ -803,6 +891,7 @@ select {
   gap: 10px;
   justify-content: flex-start;
   border-width: 2px;
+  border-radius: var(--radius-md);
 }
 
 .marker-picker-symbol {

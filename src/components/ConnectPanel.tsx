@@ -5,34 +5,35 @@ interface Props {
   onConnect: () => void;
 }
 
-const STATUS_BADGE: Record<MeshState["status"], { label: string; cls: string }> = {
-  desconectado: { label: "DESCONECTADO", cls: "neutral" },
-  conectando: { label: "CONECTANDO…", cls: "warn" },
-  configurando: { label: "LENDO CONFIG…", cls: "warn" },
-  configurado: { label: "CONECTADO", cls: "ok" },
-  erro: { label: "ERRO", cls: "danger" },
+const CONNECT_MESSAGE: Record<MeshState["status"], string> = {
+  desconectado: "Toque no botão abaixo pra conectar com o rádio.",
+  conectando: "Procurando o rádio pelo Bluetooth…",
+  configurando: "Lendo a configuração do rádio…",
+  configurado: "Conectado!",
+  erro: "Não consegui conectar.",
 };
 
 export function ConnectPanel({ state, onConnect }: Props) {
-  const badge = STATUS_BADGE[state.status];
   const busy = state.status === "conectando" || state.status === "configurando";
 
   return (
-    <div className="panel connect-card">
-      <div className="row">
-        <span className="label">Rádio</span>
-        <span className={`badge ${badge.cls}`}>{badge.label}</span>
-      </div>
-      {state.deviceName && (
-        <div className="row">
-          <span className="label">Dispositivo</span>
-          <span className="value">{state.deviceName}</span>
+    <div className="connect-card">
+      <div className={`connect-radar ${busy ? "connect-radar--active" : ""}`}>
+        <div className="connect-radar-ring connect-radar-ring--outer" />
+        <div className="connect-radar-ring connect-radar-ring--inner" />
+        <div className="connect-radar-core">
+          <span>K</span>
         </div>
-      )}
+      </div>
+
+      <p className="connect-status">{CONNECT_MESSAGE[state.status]}</p>
+      {state.deviceName && <p className="connect-device">{state.deviceName}</p>}
       {state.errorMessage && <div className="error-box">{state.errorMessage}</div>}
+
       <button className="primary connect-btn" onClick={onConnect} disabled={busy}>
         {busy ? "Conectando…" : state.status === "configurado" ? "Reconectar rádio" : "Conectar rádio"}
       </button>
+
       <p className="connect-hint">
         Dica: se o rádio não aparecer na lista de dispositivos Bluetooth, é
         porque ele ainda "acha" que está conectado de uma vez anterior —

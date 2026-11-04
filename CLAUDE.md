@@ -100,7 +100,7 @@ Status, marcadores e direção vão em mensagens binárias compactas numa porta 
 Identidade KMS (Keep Moving Society):
 
 - Base quase preta, acento **VOLT** (verde-limão, ~#C6EE00). Sempre chamar a cor de VOLT.
-- Estética industrial/brutalista: grotesca em caixa alta, filetes finos, números grandes.
+- Grotesca em caixa alta, filetes finos, números grandes. Cantos **arredondados** (não chanfrados) em botões, cards e inputs — decidido em 2026-11-04, depois de testar o visual chanfrado/moldura de cantos tipo HUD, que o Ran não gostou. Sem moldura de cantos (viewfinder) na tela.
 - Alvos de toque grandes (uso de luva), alto contraste, legível sob sol.
 - Tela principal é o mapa, com status, relógio, timer e conexão do rádio sempre visíveis.
 - Interface em português.
