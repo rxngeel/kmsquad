@@ -27,6 +27,7 @@ export function useCompass({ onHeading, throttleMs = 2000 }: Options) {
 
   useEffect(() => {
     if (!enabled) return;
+    lastSentRef.current = 0; // "ainda não recebi nenhum heading" nesta ativação
 
     function handleOrientation(event: WebkitOrientationEvent) {
       let heading: number | undefined;
@@ -45,7 +46,26 @@ export function useCompass({ onHeading, throttleMs = 2000 }: Options) {
     }
 
     window.addEventListener("deviceorientation", handleOrientation as EventListener);
-    return () => window.removeEventListener("deviceorientation", handleOrientation as EventListener);
+
+    // Alguns navegadores (ex.: WKWebView de apps como o Bluefy, se o app não
+    // tiver permissão de "Movimento e Fitness" no iOS) nunca disparam
+    // `deviceorientation`, mesmo com a permissão do W3C concedida — aí o
+    // botão liga e nada acontece, sem erro nenhum. Se depois de alguns
+    // segundos nenhum heading chegou, desliga sozinho e avisa, em vez de
+    // ficar "ligado" pra sempre sem fazer nada.
+    const timeout = setTimeout(() => {
+      if (lastSentRef.current === 0) {
+        setError(
+          "Não recebi dados do sensor de bússola. Verifique em Ajustes do iPhone → Privacidade e Segurança → Movimento e Fitness se o Bluefy tem permissão. Se já tiver e continuar assim, esse navegador não dá acesso à bússola.",
+        );
+        setEnabled(false);
+      }
+    }, 4000);
+
+    return () => {
+      window.removeEventListener("deviceorientation", handleOrientation as EventListener);
+      clearTimeout(timeout);
+    };
   }, [enabled, throttleMs]);
 
   async function toggle() {

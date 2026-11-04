@@ -175,6 +175,21 @@ body {
   padding: 6px 14px;
 }
 
+.menu-section-label {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+  margin: 18px 0 10px;
+}
+
+.menu-section-label:first-of-type {
+  margin-top: 0;
+}
+
 h1, h2, h3, h4 {
   text-transform: uppercase;
   letter-spacing: 0.04em;

@@ -1,8 +1,7 @@
 import type { MeshState } from "../meshtastic/connection";
 import type { Protobuf } from "@meshtastic/core";
 import { IdentityPanel } from "./IdentityPanel";
-import { RadioConfigPanel } from "./RadioConfigPanel";
-import { RadioSettingsPanel } from "./RadioSettingsPanel";
+import { RadioPanel } from "./RadioPanel";
 import { SquadPanel } from "./SquadPanel";
 import { NodeListPanel } from "./NodeListPanel";
 import { PositionPanel } from "./PositionPanel";
@@ -28,7 +27,13 @@ interface Props {
   setIdentity: (longName: string, shortName: string) => Promise<void>;
 }
 
-/** Menu lateral do HUD — tudo que não precisa ficar sempre visível no mapa fica aqui. */
+/**
+ * Menu lateral do HUD. Ordem pensada pra quem abre o app por 1ª vez: nome →
+ * rádio (região/preset/intervalo) → squad — assim quando o squad é criado,
+ * o link já leva a região certa pra quem entrar (ver docs/decisoes.md). O
+ * resto (nós vistos, posição manual, mensagem de teste) é status/depuração,
+ * não faz parte do "primeiro uso", por isso fica depois de uma divisória.
+ */
 export function HudMenu({
   state,
   onClose,
@@ -51,13 +56,17 @@ export function HudMenu({
             Fechar
           </button>
         </div>
+
+        <div className="menu-section-label">Primeiro uso</div>
         <IdentityPanel state={state} setIdentity={setIdentity} />
+        <RadioPanel state={state} setLoraSettings={setLoraSettings} setPositionSettings={setPositionSettings} />
         <SquadPanel state={state} createSquad={createSquad} joinSquad={joinSquad} />
-        <RadioConfigPanel state={state} />
-        <RadioSettingsPanel state={state} setLoraSettings={setLoraSettings} setPositionSettings={setPositionSettings} />
+
+        <div className="menu-section-label">Status</div>
         <NodeListPanel state={state} />
         <PositionPanel state={state} sendPhonePosition={sendPhonePosition} />
         <TestMessagePanel state={state} sendTestMessage={sendTestMessage} />
+
         <button className="secondary" onClick={onOpenDebug}>
           Abrir tela de debug
         </button>
