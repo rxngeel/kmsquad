@@ -4,9 +4,7 @@ import type { Protobuf } from "@meshtastic/core";
 import { IdentityPanel } from "./IdentityPanel";
 import { RadioPanel } from "./RadioPanel";
 import { SquadPanel } from "./SquadPanel";
-import { NodeListPanel } from "./NodeListPanel";
 import { PositionPanel } from "./PositionPanel";
-import { TestMessagePanel } from "./TestMessagePanel";
 
 interface Props {
   state: MeshState;
@@ -25,7 +23,6 @@ interface Props {
     broadcastSmartMinimumIntervalSecs?: number;
   }) => Promise<void>;
   sendPhonePosition: (lat: number, lon: number, alt?: number) => Promise<void>;
-  sendTestMessage: (text: string) => Promise<void>;
   setIdentity: (longName: string, shortName: string) => Promise<void>;
 }
 
@@ -44,7 +41,8 @@ const SECTION_TITLE: Record<Exclude<Section, null>, string> = {
  * "Voltar". Rádio vem antes de Squad na raiz mesmo "K-TAK" sendo citado
  * primeiro por nome, porque criar um squad grava a config LoRa atual no
  * link que sai pros outros jogadores — o rádio precisa estar certo ANTES
- * (ver docs/decisoes.md).
+ * (ver docs/decisoes.md). Nós vistos e mensagens têm botão próprio na barra
+ * de cima (olhados com frequência durante o jogo) — não duplicados aqui.
  */
 export function HudMenu({
   state,
@@ -55,7 +53,6 @@ export function HudMenu({
   setLoraSettings,
   setPositionSettings,
   sendPhonePosition,
-  sendTestMessage,
   setIdentity,
 }: Props) {
   const [section, setSection] = useState<Section>(null);
@@ -97,7 +94,7 @@ export function HudMenu({
             <button className="menu-category-btn" onClick={() => setSection("status")}>
               <span>
                 <span className="menu-category-title">Status &amp; ferramentas</span>
-                <span className="menu-category-sub">Nós vistos, posição, teste, debug</span>
+                <span className="menu-category-sub">Posição manual, debug</span>
               </span>
               <span className="menu-category-chevron">›</span>
             </button>
@@ -114,9 +111,7 @@ export function HudMenu({
 
         {section === "status" && (
           <>
-            <NodeListPanel state={state} />
             <PositionPanel state={state} sendPhonePosition={sendPhonePosition} />
-            <TestMessagePanel state={state} sendTestMessage={sendTestMessage} />
             <button className="secondary" onClick={onOpenDebug}>
               Abrir tela de debug
             </button>

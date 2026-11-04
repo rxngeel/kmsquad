@@ -2,10 +2,11 @@ import { useCallback, useRef, useState } from "react";
 import { useMeshtastic } from "./hooks/useMeshtastic";
 import { useCompass } from "./hooks/useCompass";
 import { ConnectPanel } from "./components/ConnectPanel";
-import { MapView } from "./components/MapView";
+import { MapView, BASE_LAYERS, type BaseLayerId } from "./components/MapView";
 import { HudMenu } from "./components/HudMenu";
 import { DebugScreen } from "./components/DebugScreen";
 import { NodeListPanel } from "./components/NodeListPanel";
+import { ChatPanel } from "./components/ChatPanel";
 import type { MeshState } from "./meshtastic/connection";
 import { labelFor } from "./meshtastic/format";
 
@@ -35,6 +36,13 @@ export default function App() {
   const [debugOpen, setDebugOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [nodesOpen, setNodesOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [layersOpen, setLayersOpen] = useState(false);
+  // Satélite é a visão que mostra o terreno de verdade (prédios, trilhas) —
+  // pedido do Ran pra abrir já nela, em vez do Relevo (melhor pra
+  // mata/elevação, mas menos reconhecível de cara).
+  const [baseLayerId, setBaseLayerId] = useState<BaseLayerId>("satelite");
+  const [gridEnabled, setGridEnabled] = useState(false);
   const tapCountRef = useRef(0);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleHeading = useCallback((degrees: number) => sendDirection(degrees), [sendDirection]);
@@ -83,7 +91,13 @@ export default function App() {
 
   return (
     <div className="hud-shell">
-      <MapView state={state} sendMarker={sendMarker} removeMarker={removeMarker} />
+      <MapView
+        state={state}
+        sendMarker={sendMarker}
+        removeMarker={removeMarker}
+        baseLayerId={baseLayerId}
+        gridEnabled={gridEnabled}
+      />
       <div className="hud-frame" />
       <div className="hud-self-badge">{ownLabel}</div>
 
@@ -104,8 +118,51 @@ export default function App() {
         <span className={`badge ${badge.cls}`}>{badge.label}</span>
         <div className="hud-topbar-actions">
           <button className="hud-nodes-btn" onClick={() => setNodesOpen(true)} aria-label="Ver nós do squad" title="Nós do squad">
-            NÓS {otherNodesCount}
+            <span className="hud-icon-dot2">
+              <span />
+              <span />
+            </span>
+            {otherNodesCount}
           </button>
+          <button className="hud-menu-btn" onClick={() => setChatOpen(true)} aria-label="Mensagens" title="Mensagens">
+            <span className="hud-icon-chat" />
+          </button>
+          <button
+            className={`hud-menu-btn ${gridEnabled ? "hud-menu-btn--active" : ""}`}
+            onClick={() => setGridEnabled((v) => !v)}
+            aria-label={gridEnabled ? "Desligar grade" : "Ligar grade"}
+            title="Grade de referência"
+          >
+            <span className="hud-icon-grid" />
+          </button>
+          <div className="hud-layers-wrap">
+            <button className="hud-menu-btn" onClick={() => setLayersOpen((v) => !v)} aria-label="Trocar camada do mapa" title="Camada do mapa">
+              <span className="hud-icon-layers">
+                <span />
+                <span />
+              </span>
+            </button>
+            {layersOpen && (
+              <>
+                <div className="hud-layers-backdrop" onClick={() => setLayersOpen(false)} />
+                <div className="hud-layers-menu">
+                {(Object.keys(BASE_LAYERS) as BaseLayerId[]).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={id === baseLayerId ? "active" : ""}
+                    onClick={() => {
+                      setBaseLayerId(id);
+                      setLayersOpen(false);
+                    }}
+                  >
+                    {BASE_LAYERS[id].label}
+                  </button>
+                ))}
+                </div>
+              </>
+            )}
+          </div>
           <button className="hud-menu-btn" onClick={() => setMenuOpen(true)} aria-label="Abrir menu">
             ☰
           </button>
@@ -128,6 +185,21 @@ export default function App() {
         </>
       )}
 
+      {chatOpen && (
+        <>
+          <div className="hud-drawer-backdrop" onClick={() => setChatOpen(false)} />
+          <div className="hud-drawer">
+            <div className="hud-drawer-header">
+              <h2 style={{ margin: 0 }}>Mensagens</h2>
+              <button className="secondary" onClick={() => setChatOpen(false)}>
+                Fechar
+              </button>
+            </div>
+            <ChatPanel state={state} sendTestMessage={sendTestMessage} />
+          </div>
+        </>
+      )}
+
       {menuOpen && (
         <HudMenu
           state={state}
@@ -141,7 +213,6 @@ export default function App() {
           setLoraSettings={setLoraSettings}
           setPositionSettings={setPositionSettings}
           sendPhonePosition={sendPhonePosition}
-          sendTestMessage={sendTestMessage}
           setIdentity={setIdentity}
         />
       )}

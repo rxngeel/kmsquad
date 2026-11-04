@@ -9,7 +9,7 @@ import { MarkerType, type MarkerTypeValue } from "../meshtastic/protocol";
 // até o Ran mandar a localização exata. Troca pra fase de mapa offline.
 const DEFAULT_CENTER: [number, number] = [-25.4284, -49.2733];
 
-type BaseLayerId = "relevo" | "satelite" | "rua";
+export type BaseLayerId = "relevo" | "satelite" | "rua";
 
 // Relevo (OpenTopoMap) mostra vegetação (verde = mata) e curvas de nível —
 // bom pra diferenciar mata/aberto/elevação, e a licença (CC-BY-SA, dados
@@ -20,7 +20,7 @@ type BaseLayerId = "relevo" | "satelite" | "rua";
 // maxZoom > maxNativeZoom deixa o Leaflet "esticar" o último tile disponível
 // (fica um pouco granulado, mas dá pra aproximar mais que o provedor
 // realmente tem — pedido do Ran pra conseguir ver prédio por prédio).
-const BASE_LAYERS: Record<BaseLayerId, { label: string; url: string; options: L.TileLayerOptions }> = {
+export const BASE_LAYERS: Record<BaseLayerId, { label: string; url: string; options: L.TileLayerOptions }> = {
   relevo: {
     label: "Relevo",
     url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
@@ -46,6 +46,31 @@ const BASE_LAYERS: Record<BaseLayerId, { label: string; url: string; options: L.
   },
 };
 
+// Grade de referência (linhas de latitude/longitude) — não é MGRS (grid
+// militar de verdade), só um graticule simples pra dar referência visual
+// no mapa, estilo ATAK. MGRS é um projeto futuro maior (precisa de lib de
+// conversão de coordenada) se o Ran quiser de verdade mais pra frente.
+const GRID_STYLE: L.PolylineOptions = {
+  color: "#c6ee00",
+  weight: 1,
+  opacity: 0.25,
+  interactive: false,
+};
+
+/** Escolhe um intervalo "redondo" (1/2/5 × potência de 10) pra caber ~6 linhas na tela. */
+function niceGridInterval(spanDeg: number): number {
+  if (!(spanDeg > 0)) return 0;
+  const rough = spanDeg / 6;
+  const pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
+  const steps = [1, 2, 5, 10];
+  let best = steps[0] * pow10;
+  for (const s of steps) {
+    const candidate = s * pow10;
+    if (Math.abs(candidate - rough) < Math.abs(best - rough)) best = candidate;
+  }
+  return best;
+}
+
 const MARKER_OPTIONS: Array<{ type: MarkerTypeValue; label: string; symbol: string; cls: string }> = [
   { type: MarkerType.CONTATO, label: "Contato", symbol: "!", cls: "contato" },
   { type: MarkerType.OBJETIVO, label: "Objetivo", symbol: "★", cls: "objetivo" },
@@ -61,19 +86,18 @@ interface Props {
   state: MeshState;
   sendMarker: (type: MarkerTypeValue, latitudeI: number, longitudeI: number) => Promise<void>;
   removeMarker: (id: number) => Promise<void>;
+  baseLayerId: BaseLayerId;
+  gridEnabled: boolean;
 }
 
-export function MapView({ state, sendMarker, removeMarker }: Props) {
+export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnabled }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef(new Map<number, L.Marker>());
   const pinsRef = useRef(new Map<string, L.Marker>());
   const hasCenteredRef = useRef(false);
   const baseLayerRef = useRef<L.TileLayer | null>(null);
-  // Satélite é a visão que mostra o terreno de verdade (prédios, trilhas) —
-  // pedido do Ran pra abrir já nela, em vez do Relevo (que é melhor pra
-  // mata/elevação, mas menos reconhecível de cara).
-  const [baseLayerId, setBaseLayerId] = useState<BaseLayerId>("satelite");
+  const gridLinesRef = useRef<L.Polyline[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [placingType, setPlacingType] = useState<MarkerTypeValue | null>(null);
   const [selectedMarkerKey, setSelectedMarkerKey] = useState<string | null>(null);
@@ -95,8 +119,25 @@ export function MapView({ state, sendMarker, removeMarker }: Props) {
     // pela barra do HUD (status da conexão, relógio, menu).
     const map = L.map(containerRef.current, { zoomControl: false, maxZoom: 21 }).setView(DEFAULT_CENTER, 16);
 
-    // Botão de centralizar na própria posição — fica acima do +/- de zoom
-    // (mesmo canto), estilo "locate" do ATAK.
+    // Atribuição é exigência de licença dos provedores de tile (OSM/OpenTopoMap/
+    // Esri), não dá pra tirar — mas tira o "Leaflet" (não é obrigatório).
+    // Precisa ser o PRIMEIRO controle adicionado no canto "bottomleft": o
+    // Leaflet insere cada controle novo de um canto "bottom" na FRENTE da
+    // pilha (`insertBefore(..., corner.firstChild)`), então quem entra
+    // primeiro acaba empurrado pro final — ou seja, bem embaixo de tudo,
+    // que é onde o Ran pediu pra atribuição ficar.
+    map.attributionControl.setPrefix(false);
+    map.attributionControl.setPosition("bottomleft");
+
+    // Escala (metros/km) — referência de distância, estilo ATAK. Adicionada
+    // logo depois da atribuição (ver ordem explicada acima) pra ficar logo
+    // acima dela, perto do canto.
+    L.control.scale({ position: "bottomleft", metric: true, imperial: false, maxWidth: 110 }).addTo(map);
+
+    L.control.zoom({ position: "bottomleft" }).addTo(map);
+
+    // Botão de centralizar na própria posição — fica acima de tudo nesse
+    // canto (é o que mais se toca durante o jogo), estilo "locate" do ATAK.
     const LocateControl = L.Control.extend({
       options: { position: "bottomleft" as const },
       onAdd() {
@@ -116,15 +157,6 @@ export function MapView({ state, sendMarker, removeMarker }: Props) {
       },
     });
     new LocateControl().addTo(map);
-
-    L.control.zoom({ position: "bottomleft" }).addTo(map);
-
-    // Atribuição é exigência de licença dos provedores de tile (OSM/OpenTopoMap/
-    // Esri), não dá pra tirar — mas tira o "Leaflet" (não é obrigatório) e
-    // move pro canto inferior esquerdo, longe do botão de status no canto
-    // inferior direito.
-    map.attributionControl.setPrefix(false);
-    map.attributionControl.setPosition("bottomleft");
 
     // Toque segurando não é confiável em navegador mobile (o sistema
     // disputa com o JS e às vezes vence selecionando texto/imagem) — fluxo
@@ -161,6 +193,69 @@ export function MapView({ state, sendMarker, removeMarker }: Props) {
     baseLayerRef.current = layer;
     if (previous) previous.remove();
   }, [baseLayerId]);
+
+  // Grade de referência, liga/desliga pelo botão no topo — redesenha ao
+  // mover/dar zoom pra sempre caber um número razoável de linhas na tela.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    function clearGrid() {
+      for (const line of gridLinesRef.current) line.remove();
+      gridLinesRef.current = [];
+    }
+
+    if (!gridEnabled) {
+      clearGrid();
+      return;
+    }
+
+    function drawGrid() {
+      clearGrid();
+      const bounds = map!.getBounds();
+      const south = bounds.getSouth();
+      const north = bounds.getNorth();
+      const west = bounds.getWest();
+      const east = bounds.getEast();
+      const interval = niceGridInterval(Math.max(north - south, east - west));
+      if (!interval) return;
+
+      const lines: L.Polyline[] = [];
+      for (let lat = Math.ceil(south / interval) * interval; lat <= north && lines.length < 40; lat += interval) {
+        lines.push(
+          L.polyline(
+            [
+              [lat, west],
+              [lat, east],
+            ],
+            GRID_STYLE,
+          ).addTo(map!),
+        );
+      }
+      for (let lon = Math.ceil(west / interval) * interval; lon <= east && lines.length < 80; lon += interval) {
+        lines.push(
+          L.polyline(
+            [
+              [south, lon],
+              [north, lon],
+            ],
+            GRID_STYLE,
+          ).addTo(map!),
+        );
+      }
+      gridLinesRef.current = lines;
+    }
+
+    drawGrid();
+    map.on("moveend", drawGrid);
+    map.on("zoomend", drawGrid);
+
+    return () => {
+      map.off("moveend", drawGrid);
+      map.off("zoomend", drawGrid);
+      clearGrid();
+    };
+  }, [gridEnabled]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -279,18 +374,6 @@ export function MapView({ state, sendMarker, removeMarker }: Props) {
   return (
     <div className="map-wrap">
       <div ref={containerRef} className="map-view" />
-      <div className="map-layer-switch">
-        {(Object.keys(BASE_LAYERS) as BaseLayerId[]).map((id) => (
-          <button
-            key={id}
-            type="button"
-            className={id === baseLayerId ? "active" : ""}
-            onClick={() => setBaseLayerId(id)}
-          >
-            {BASE_LAYERS[id].label}
-          </button>
-        ))}
-      </div>
 
       {!pickerOpen && !placingType && (
         <button type="button" className="marker-fab" onClick={() => setPickerOpen(true)} aria-label="Marcar no mapa">

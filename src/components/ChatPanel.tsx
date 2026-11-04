@@ -6,7 +6,8 @@ interface Props {
   sendTestMessage: (text: string) => Promise<void>;
 }
 
-export function TestMessagePanel({ state, sendTestMessage }: Props) {
+/** Chat de texto do squad — viaja na porta de mensagem padrão do Meshtastic, no canal do squad. */
+export function ChatPanel({ state, sendTestMessage }: Props) {
   const [text, setText] = useState("");
 
   async function handleSend() {
@@ -18,7 +19,7 @@ export function TestMessagePanel({ state, sendTestMessage }: Props) {
 
   return (
     <div className="panel">
-      <h2>Mensagem de teste</h2>
+      <h2>Mensagens</h2>
       <div className="msg-list">
         {state.messages.length === 0 && (
           <p style={{ color: "var(--text-dim)", fontSize: "0.9rem" }}>
