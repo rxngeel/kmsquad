@@ -22,6 +22,7 @@ export default function App() {
   const {
     state,
     connect,
+    disconnect,
     sendTestMessage,
     sendPhonePosition,
     createSquad,
@@ -63,20 +64,21 @@ export default function App() {
   if (debugOpen) {
     return (
       <div className="setup-screen">
-        <DebugScreen state={state} onClose={() => setDebugOpen(false)} />
+        <DebugScreen state={state} onClose={() => setDebugOpen(false)} disconnect={disconnect} />
       </div>
     );
   }
 
   if (!connected) {
     return (
-      <div className="setup-screen">
-        <h1>
-          K<span style={{ color: "var(--volt)" }}>-TAK</span>
-        </h1>
-        <p style={{ color: "var(--text-dim)", fontSize: "0.85rem", marginTop: -8, marginBottom: 16 }}>
-          Fase 3 — funções de jogo (em andamento)
-        </p>
+      <div className="connect-screen">
+        <div className="hud-frame" />
+        <div className="connect-hero">
+          <h1 className="connect-logo">
+            K<span style={{ color: "var(--volt)" }}>-TAK</span>
+          </h1>
+          <p className="connect-tagline">RASTREAMENTO TÁTICO DE SQUAD</p>
+        </div>
         <ConnectPanel state={state} onConnect={connect} />
         <div className="footer-tap" onClick={handleFooterTap}>
           K-TAK · toque 5x para abrir o debug

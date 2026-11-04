@@ -82,6 +82,21 @@ export class MeshtasticConnection {
   private messageIdCounter = 0;
   private markerIdCounter = Math.floor(Math.random() * 256);
 
+  constructor() {
+    // Rádios Meshtastic (NimBLE) param de anunciar via Bluetooth enquanto
+    // tiverem uma conexão BLE ativa. Se a aba fechar/recarregar sem
+    // desconectar de verdade, o rádio segue achando que tem alguém
+    // conectado e some da lista do seletor na próxima vez — sintoma: "já
+    // tô conectado, mas o app não reconhece, e o rádio não aparece pra
+    // escolher". `pagehide` dispara de forma confiável em mobile (mais que
+    // `beforeunload`) e garante que o GATT é fechado de verdade.
+    if (typeof window !== "undefined") {
+      window.addEventListener("pagehide", () => {
+        this.device?.disconnect().catch(() => {});
+      });
+    }
+  }
+
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
     listener(this.state);
@@ -108,6 +123,14 @@ export class MeshtasticConnection {
           "Este navegador não suporta Web Bluetooth. No iPhone, use o app Bluefy.",
       });
       return;
+    }
+
+    // Se já tinha um rádio conectado (ex.: botão "Reconectar"), fecha essa
+    // conexão antes de abrir o seletor de novo — senão o rádio antigo fica
+    // com uma conexão BLE pendurada e some da lista (ver nota no construtor).
+    if (this.device) {
+      await this.device.disconnect().catch(() => {});
+      this.device = null;
     }
 
     this.setState({ status: "conectando", errorMessage: undefined });
@@ -539,7 +562,11 @@ export class MeshtasticConnection {
     this.log(`Identidade atualizada: "${longName}" / "${shortName}".`);
   }
 
-  disconnect(): void {
+  /** Fecha a conexão BLE de verdade — essencial pro rádio voltar a anunciar e aparecer na lista da próxima vez. */
+  async disconnect(): Promise<void> {
+    if (this.device) {
+      await this.device.disconnect().catch(() => {});
+    }
     this.device = null;
     this.setState({ ...createInitialState() });
   }

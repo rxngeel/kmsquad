@@ -18,7 +18,7 @@ export function ConnectPanel({ state, onConnect }: Props) {
   const busy = state.status === "conectando" || state.status === "configurando";
 
   return (
-    <div className="panel">
+    <div className="panel connect-card">
       <div className="row">
         <span className="label">Rádio</span>
         <span className={`badge ${badge.cls}`}>{badge.label}</span>
@@ -30,11 +30,14 @@ export function ConnectPanel({ state, onConnect }: Props) {
         </div>
       )}
       {state.errorMessage && <div className="error-box">{state.errorMessage}</div>}
-      <div style={{ marginTop: 12 }}>
-        <button className="primary" onClick={onConnect} disabled={busy}>
-          {state.status === "configurado" ? "Reconectar rádio" : "Conectar rádio"}
-        </button>
-      </div>
+      <button className="primary connect-btn" onClick={onConnect} disabled={busy}>
+        {busy ? "Conectando…" : state.status === "configurado" ? "Reconectar rádio" : "Conectar rádio"}
+      </button>
+      <p className="connect-hint">
+        Dica: se o rádio não aparecer na lista de dispositivos Bluetooth, é
+        porque ele ainda "acha" que está conectado de uma vez anterior —
+        desligue e ligue o rádio e tente de novo.
+      </p>
     </div>
   );
 }
