@@ -82,6 +82,12 @@ function markerVisual(type: MarkerTypeValue) {
   return MARKER_OPTIONS.find((o) => o.type === type) ?? MARKER_OPTIONS[0];
 }
 
+/** Régua: só local (não viaja pela mesh) — mede distância em linha reta entre 2 toques no mapa. */
+function formatDistance(meters: number): string {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(2)} km`;
+}
+
 interface Props {
   state: MeshState;
   sendMarker: (type: MarkerTypeValue, latitudeI: number, longitudeI: number) => Promise<void>;
@@ -101,8 +107,14 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
   const [pickerOpen, setPickerOpen] = useState(false);
   const [placingType, setPlacingType] = useState<MarkerTypeValue | null>(null);
   const [selectedMarkerKey, setSelectedMarkerKey] = useState<string | null>(null);
+  const [rulerOn, setRulerOn] = useState(false);
+  const [rulerPoints, setRulerPoints] = useState<L.LatLng[]>([]);
   const placingTypeRef = useRef<MarkerTypeValue | null>(null);
   placingTypeRef.current = placingType;
+  const rulerOnRef = useRef(false);
+  rulerOnRef.current = rulerOn;
+  const rulerLineRef = useRef<L.Polyline | null>(null);
+  const rulerMarkersRef = useRef<L.CircleMarker[]>([]);
   const sendMarkerRef = useRef(sendMarker);
   sendMarkerRef.current = sendMarker;
   const recenterRef = useRef<() => void>(() => {});
@@ -163,6 +175,10 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
     // é só de toques: botão "+" abre o menu de tipo, depois um toque no
     // mapa marca o ponto. `click` normal, sem ambiguidade de gesto.
     map.on("click", (e: L.LeafletMouseEvent) => {
+      if (rulerOnRef.current) {
+        setRulerPoints((prev) => (prev.length >= 2 ? prev : [...prev, e.latlng]));
+        return;
+      }
       const type = placingTypeRef.current;
       if (type === null) return;
       setPlacingType(null);
@@ -256,6 +272,38 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
       clearGrid();
     };
   }, [gridEnabled]);
+
+  // Régua: desenha os pontos tocados + a linha entre eles (só quando tem 2).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    function clearRuler() {
+      rulerLineRef.current?.remove();
+      rulerLineRef.current = null;
+      for (const m of rulerMarkersRef.current) m.remove();
+      rulerMarkersRef.current = [];
+    }
+
+    clearRuler();
+    for (const p of rulerPoints) {
+      rulerMarkersRef.current.push(
+        L.circleMarker(p, { radius: 5, color: "#0a0a0a", weight: 2, fillColor: "#c6ee00", fillOpacity: 1 }).addTo(
+          map,
+        ),
+      );
+    }
+    if (rulerPoints.length === 2) {
+      rulerLineRef.current = L.polyline(rulerPoints, {
+        color: "#c6ee00",
+        weight: 2,
+        dashArray: "6 6",
+        interactive: false,
+      }).addTo(map);
+    }
+
+    return clearRuler;
+  }, [rulerPoints]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -356,7 +404,21 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
 
   function handlePickType(type: MarkerTypeValue) {
     setPickerOpen(false);
+    setRulerOn(false);
+    setRulerPoints([]);
     setPlacingType(type);
+  }
+
+  function handlePickRuler() {
+    setPickerOpen(false);
+    setPlacingType(null);
+    setRulerPoints([]);
+    setRulerOn(true);
+  }
+
+  function handleClearRuler() {
+    setRulerOn(false);
+    setRulerPoints([]);
   }
 
   async function handleRemoveSelected() {
@@ -370,12 +432,13 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
   const selectedMarker = selectedMarkerKey ? state.markers.get(selectedMarkerKey) : undefined;
   const selectedVisual = selectedMarker ? markerVisual(selectedMarker.type) : null;
   const isOwnSelectedMarker = selectedMarker?.authorNodeNum === state.myNodeNum;
+  const rulerDistance = rulerPoints.length === 2 ? rulerPoints[0].distanceTo(rulerPoints[1]) : null;
 
   return (
     <div className="map-wrap">
       <div ref={containerRef} className="map-view" />
 
-      {!pickerOpen && !placingType && (
+      {!pickerOpen && !placingType && !rulerOn && (
         <button type="button" className="marker-fab" onClick={() => setPickerOpen(true)} aria-label="Marcar no mapa">
           +
         </button>
@@ -388,6 +451,29 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
           </span>
           <button type="button" className="secondary" onClick={() => setPlacingType(null)}>
             Cancelar
+          </button>
+        </div>
+      )}
+
+      {rulerOn && rulerPoints.length < 2 && (
+        <div className="marker-placing-hint">
+          <span>
+            Toque no mapa pra marcar o {rulerPoints.length === 0 ? "1º" : "2º"} ponto da{" "}
+            <strong>RÉGUA</strong>
+          </span>
+          <button type="button" className="secondary" onClick={handleClearRuler}>
+            Cancelar
+          </button>
+        </div>
+      )}
+
+      {rulerOn && rulerDistance !== null && (
+        <div className="marker-placing-hint">
+          <span>
+            Distância: <strong>{formatDistance(rulerDistance)}</strong>
+          </span>
+          <button type="button" className="secondary" onClick={handleClearRuler}>
+            Limpar
           </button>
         </div>
       )}
@@ -424,6 +510,10 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
                 {opt.label}
               </button>
             ))}
+            <button type="button" className="marker-picker-btn marker-picker-btn--regua" onClick={handlePickRuler}>
+              <span className="marker-picker-symbol">↔</span>
+              Régua (medir distância)
+            </button>
             <button type="button" className="secondary" onClick={() => setPickerOpen(false)}>
               Cancelar
             </button>

@@ -621,10 +621,18 @@ select {
 
 /* Controles do Leaflet (zoom, atribuição) também respeitam a área segura —
    margem reduzida (pedido do Ran) pra esse conjunto ficar mais colado na
-   quina esquerda. */
+   quina esquerda. O leaflet.css dá mais 10px de margem pra CADA controle
+   dentro do canto (`.leaflet-left .leaflet-control`), em cima da margem do
+   canto em si — por isso o espaço ainda parecia grande mesmo depois de
+   reduzir só o container; zera essa margem extra e deixa só a do canto. */
 .leaflet-bottom.leaflet-left {
   margin-left: calc(6px + env(safe-area-inset-left, 0px));
   margin-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
+
+.leaflet-left .leaflet-control,
+.leaflet-left .leaflet-control-scale {
+  margin-left: 0 !important;
 }
 
 /* Leaflet desenha os controles (zoom, locate) em branco por padrão — troca
@@ -820,6 +828,12 @@ select {
 
 .marker-picker-btn--perigo { border-color: var(--amber); color: var(--amber); }
 .marker-picker-btn--perigo .marker-picker-symbol { background: var(--amber); }
+
+/* Régua é diferente dos outros 4 (não é um marcador do squad, é uma
+   ferramenta local de medir distância) — cor neutra pra não parecer mais
+   um tipo de marcador compartilhado. */
+.marker-picker-btn--regua { border-color: var(--text-dim); color: var(--text); margin-top: 6px; }
+.marker-picker-btn--regua .marker-picker-symbol { background: var(--text-dim); color: #0a0a0a; }
 
 /* Botão "+" que abre o menu de marcador — canto inferior direito, onde
    ficava o botão de status (removido). */
