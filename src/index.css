@@ -982,10 +982,15 @@ select {
   height: 26px;
 }
 
-/* Aviso de "modo marcando" — some depois do toque no mapa ou do cancelar. */
+/* Aviso de "modo marcando" — some depois do toque no mapa ou do cancelar.
+   Fica perto do topo (ver `top` abaixo), então encosta na barra de cima em
+   telas estreitas/retrato — precisa de z-index MAIOR que o dela (1000), e
+   não só igual: com o mesmo valor, o empate é resolvido pela ordem no DOM
+   (a barra de cima vem depois no JSX), e ela ganhava, cobrindo os botões
+   "Remover"/"Fechar"/"Cancelar" e bloqueando o toque. */
 .marker-placing-hint {
   position: absolute;
-  z-index: 1000;
+  z-index: 1050;
   left: 50%;
   top: calc(56px + env(safe-area-inset-top, 0px));
   transform: translateX(-50%);
