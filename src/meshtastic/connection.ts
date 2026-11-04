@@ -231,6 +231,15 @@ export class MeshtasticConnection {
       });
 
       device.events.onMessagePacket.subscribe((packet) => {
+        // A lib (`sendText`) manda `echoResponse: true` pro próprio pacote
+        // que a gente envia — isso dispara esse MESMO evento localmente,
+        // antes até de ir pro Bluetooth, só pra dar feedback rápido de "foi
+        // enfileirado". `sendTestMessage` já registra a mensagem como "tx"
+        // na hora de mandar; sem esse filtro, o eco aparecia de novo aqui
+        // como se fosse uma mensagem "rx" — duplicada, com a cara de "mandei
+        // e recebi" mesmo sem nenhum outro rádio por perto.
+        if (packet.from === this.state.myNodeNum) return;
+
         const text = packet.data;
         this.messageIdCounter += 1;
         this.setState({
