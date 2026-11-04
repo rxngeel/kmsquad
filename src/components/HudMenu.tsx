@@ -22,7 +22,14 @@ interface Props {
     broadcastSmartMinimumDistance?: number;
     broadcastSmartMinimumIntervalSecs?: number;
   }) => Promise<void>;
-  sendPhonePosition: (lat: number, lon: number, alt?: number) => Promise<void>;
+  phonePosition: {
+    active: boolean;
+    lastSent: string;
+    accuracy?: number;
+    error?: string;
+    start: () => void;
+    stop: () => void;
+  };
   setIdentity: (longName: string, shortName: string) => Promise<void>;
 }
 
@@ -52,7 +59,7 @@ export function HudMenu({
   joinSquad,
   setLoraSettings,
   setPositionSettings,
-  sendPhonePosition,
+  phonePosition,
   setIdentity,
 }: Props) {
   const [section, setSection] = useState<Section>(null);
@@ -107,7 +114,15 @@ export function HudMenu({
 
         {section === "status" && (
           <>
-            <PositionPanel state={state} sendPhonePosition={sendPhonePosition} />
+            <PositionPanel
+              state={state}
+              active={phonePosition.active}
+              lastSent={phonePosition.lastSent}
+              accuracy={phonePosition.accuracy}
+              gpsError={phonePosition.error}
+              onStart={phonePosition.start}
+              onStop={phonePosition.stop}
+            />
             <button className="secondary" onClick={onOpenDebug}>
               Abrir tela de debug
             </button>

@@ -1,66 +1,21 @@
-import { useEffect, useRef, useState } from "react";
 import type { MeshState } from "../meshtastic/connection";
 import { isPhoneGpsMode } from "../meshtastic/format";
 
 interface Props {
   state: MeshState;
-  sendPhonePosition: (lat: number, lon: number, alt?: number) => Promise<void>;
+  active: boolean;
+  lastSent: string;
+  accuracy?: number;
+  gpsError?: string;
+  onStart: () => void;
+  onStop: () => void;
 }
 
-export function PositionPanel({ state, sendPhonePosition }: Props) {
-  const [active, setActive] = useState(false);
-  const [lastSent, setLastSent] = useState<string>("—");
-  const [accuracy, setAccuracy] = useState<number>();
-  const [gpsError, setGpsError] = useState<string>();
-  const watchIdRef = useRef<number | null>(null);
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-
+// Painel só mostra o status/botão — quem manda a posição de verdade é o
+// hook `usePhonePosition`, que vive em App.tsx (ver comentário lá: precisa
+// sobreviver a esse painel sendo desmontado quando o menu fecha).
+export function PositionPanel({ state, active, lastSent, accuracy, gpsError, onStart, onStop }: Props) {
   const phoneMode = isPhoneGpsMode(state.positionConfig?.gpsMode);
-
-  useEffect(() => {
-    return () => stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function start() {
-    if (!navigator.geolocation) {
-      setGpsError("Este navegador não tem acesso ao GPS.");
-      return;
-    }
-    setGpsError(undefined);
-    setActive(true);
-
-    if ("wakeLock" in navigator) {
-      try {
-        wakeLockRef.current = await (navigator as Navigator & {
-          wakeLock: { request: (type: "screen") => Promise<WakeLockSentinel> };
-        }).wakeLock.request("screen");
-      } catch {
-        // Bluefy pode não suportar; o jogador precisa manter a tela acesa manualmente.
-      }
-    }
-
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude, longitude, altitude, accuracy } = pos.coords;
-        sendPhonePosition(latitude, longitude, altitude ?? undefined);
-        setLastSent(new Date().toLocaleTimeString("pt-BR"));
-        setAccuracy(accuracy);
-      },
-      (err) => setGpsError(`Erro de GPS: ${err.message}`),
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
-    );
-  }
-
-  function stop() {
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
-    wakeLockRef.current?.release().catch(() => {});
-    wakeLockRef.current = null;
-    setActive(false);
-  }
 
   if (!phoneMode) {
     return (
@@ -78,8 +33,9 @@ export function PositionPanel({ state, sendPhonePosition }: Props) {
     <div className="panel">
       <h2>Posição (GPS do celular)</h2>
       <p style={{ color: "var(--text-dim)", fontSize: "0.9rem" }}>
-        Este rádio não tem GPS próprio ativo. Mantenha esta página aberta e a
-        tela acesa para enviar sua posição.
+        Este rádio não tem GPS próprio ativo. Mantenha o Bluetooth ligado e o
+        celular com você — o envio continua mesmo fechando esse menu, só para
+        se você tocar em "Parar" ou fechar o app de vez.
       </p>
       {gpsError && <div className="error-box">{gpsError}</div>}
       {accuracy !== undefined && accuracy > 300 && (
@@ -100,7 +56,7 @@ export function PositionPanel({ state, sendPhonePosition }: Props) {
         <span className="value">{accuracy !== undefined ? `±${Math.round(accuracy)} m` : "—"}</span>
       </div>
       <div style={{ marginTop: 12 }}>
-        <button className={active ? "secondary" : "primary"} onClick={active ? stop : start}>
+        <button className={active ? "secondary" : "primary"} onClick={active ? onStop : onStart}>
           {active ? "Parar envio de posição" : "Começar a enviar minha posição"}
         </button>
       </div>

@@ -437,6 +437,24 @@ body {
   pointer-events: none;
 }
 
+/* Avisa que o envio de posição do celular (modo V3) está ativo — some
+   junto com o resto do HUD, mas não exige abrir o menu pra conferir. Fica
+   num cantinho do próprio badge de nó, não disputa espaço com o numeral. */
+.hud-self-badge-gps {
+  position: absolute;
+  bottom: -5px;
+  right: -8px;
+  background: #0a0a0a;
+  color: var(--volt);
+  border: 1.5px solid var(--volt);
+  border-radius: var(--radius-pill);
+  font-size: 0.5rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+}
+
 .hud-compass-error {
   position: absolute;
   z-index: 1000;

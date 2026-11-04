@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useMeshtastic } from "./hooks/useMeshtastic";
 import { useCompass } from "./hooks/useCompass";
+import { usePhonePosition } from "./hooks/usePhonePosition";
 import { ConnectPanel } from "./components/ConnectPanel";
 import { MapView, BASE_LAYERS, type BaseLayerId } from "./components/MapView";
 import { HudMenu } from "./components/HudMenu";
@@ -51,6 +52,11 @@ export default function App() {
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleHeading = useCallback((degrees: number) => sendDirection(degrees), [sendDirection]);
   const compass = useCompass({ onHeading: handleHeading });
+  // Hook no nível do App (não dentro do painel do menu) de propósito: o
+  // envio de posição do celular precisa continuar mesmo depois que o
+  // jogador fecha o menu pra voltar a olhar o mapa — ver comentário em
+  // usePhonePosition.ts.
+  const phonePosition = usePhonePosition({ onPosition: sendPhonePosition });
 
   const connected = state.status === "configurado";
 
@@ -102,7 +108,14 @@ export default function App() {
         offlineOpen={offlineOpen}
         onCloseOffline={() => setOfflineOpen(false)}
       />
-      <div className="hud-self-badge">{ownLabel}</div>
+      <div className="hud-self-badge">
+        {ownLabel}
+        {phonePosition.active && (
+          <span className="hud-self-badge-gps" title="Enviando posição do celular">
+            GPS
+          </span>
+        )}
+      </div>
 
       <div className="hud-topbar">
         <button
@@ -179,6 +192,7 @@ export default function App() {
         </div>
       </div>
       {compass.error && <div className="hud-compass-error">{compass.error}</div>}
+      {phonePosition.error && <div className="hud-compass-error">{phonePosition.error}</div>}
 
       {nodesOpen && (
         <>
@@ -222,7 +236,7 @@ export default function App() {
           joinSquad={joinSquad}
           setLoraSettings={setLoraSettings}
           setPositionSettings={setPositionSettings}
-          sendPhonePosition={sendPhonePosition}
+          phonePosition={phonePosition}
           setIdentity={setIdentity}
         />
       )}
