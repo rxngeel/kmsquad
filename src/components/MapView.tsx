@@ -4,6 +4,8 @@ import "leaflet/dist/leaflet.css";
 import type { MapMarker, MeshState } from "../meshtastic/connection";
 import { isPositionStale, labelFor } from "../meshtastic/format";
 import { MarkerType, type MarkerTypeValue } from "../meshtastic/protocol";
+import { clearFieldImage, loadFieldImage, saveFieldImage } from "../offline/fieldImageStore";
+import { OfflineMapPanel } from "./OfflineMapPanel";
 
 // Airsoft Company (Curitiba) é o campo de referência pra teste — provisório
 // até o Ran mandar a localização exata. Troca pra fase de mapa offline.
@@ -94,9 +96,19 @@ interface Props {
   removeMarker: (id: number) => Promise<void>;
   baseLayerId: BaseLayerId;
   gridEnabled: boolean;
+  offlineOpen: boolean;
+  onCloseOffline: () => void;
 }
 
-export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnabled }: Props) {
+export function MapView({
+  state,
+  sendMarker,
+  removeMarker,
+  baseLayerId,
+  gridEnabled,
+  offlineOpen,
+  onCloseOffline,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef(new Map<number, L.Marker>());
@@ -115,6 +127,13 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
   rulerOnRef.current = rulerOn;
   const rulerLineRef = useRef<L.Polyline | null>(null);
   const rulerMarkersRef = useRef<L.CircleMarker[]>([]);
+  const [fieldImagePlacing, setFieldImagePlacing] = useState<File | null>(null);
+  const [fieldImageCorners, setFieldImageCorners] = useState<L.LatLng[]>([]);
+  const [hasFieldImage, setHasFieldImage] = useState(false);
+  const fieldImagePlacingRef = useRef<File | null>(null);
+  fieldImagePlacingRef.current = fieldImagePlacing;
+  const fieldImageOverlayRef = useRef<L.ImageOverlay | null>(null);
+  const fieldImageUrlRef = useRef<string | null>(null);
   const sendMarkerRef = useRef(sendMarker);
   sendMarkerRef.current = sendMarker;
   const recenterRef = useRef<() => void>(() => {});
@@ -175,6 +194,10 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
     // é só de toques: botão "+" abre o menu de tipo, depois um toque no
     // mapa marca o ponto. `click` normal, sem ambiguidade de gesto.
     map.on("click", (e: L.LeafletMouseEvent) => {
+      if (fieldImagePlacingRef.current) {
+        setFieldImageCorners((prev) => (prev.length >= 2 ? prev : [...prev, e.latlng]));
+        return;
+      }
       if (rulerOnRef.current) {
         setRulerPoints((prev) => (prev.length >= 2 ? prev : [...prev, e.latlng]));
         return;
@@ -196,8 +219,61 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
       markersRef.current.clear();
       pinsRef.current.clear();
       hasCenteredRef.current = false;
+      if (fieldImageUrlRef.current) URL.revokeObjectURL(fieldImageUrlRef.current);
+      fieldImageUrlRef.current = null;
+      fieldImageOverlayRef.current = null;
     };
   }, []);
+
+  // Carrega a foto do campo salva (IndexedDB) ao abrir o app, se tiver uma —
+  // assim ela sobrevive a recarregar a página 100% offline em campo.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    let cancelled = false;
+    loadFieldImage()
+      .then((record) => {
+        if (!record || cancelled) return;
+        const bounds = L.latLngBounds(
+          [record.bounds.south, record.bounds.west],
+          [record.bounds.north, record.bounds.east],
+        );
+        const url = URL.createObjectURL(record.blob);
+        fieldImageOverlayRef.current?.remove();
+        fieldImageOverlayRef.current = L.imageOverlay(url, bounds, { opacity: 0.85 }).addTo(map);
+        fieldImageUrlRef.current = url;
+        setHasFieldImage(true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Foto do campo: depois de 2 toques no mapa, usa os cantos como bounds da
+  // imagem e salva no IndexedDB (persiste offline, sem depender de rede).
+  useEffect(() => {
+    const map = mapRef.current;
+    const file = fieldImagePlacing;
+    if (!map || !file || fieldImageCorners.length < 2) return;
+
+    const bounds = L.latLngBounds(fieldImageCorners[0], fieldImageCorners[1]);
+    const url = URL.createObjectURL(file);
+
+    fieldImageOverlayRef.current?.remove();
+    if (fieldImageUrlRef.current) URL.revokeObjectURL(fieldImageUrlRef.current);
+
+    fieldImageOverlayRef.current = L.imageOverlay(url, bounds, { opacity: 0.85 }).addTo(map);
+    fieldImageUrlRef.current = url;
+    setHasFieldImage(true);
+    setFieldImagePlacing(null);
+    setFieldImageCorners([]);
+
+    saveFieldImage({
+      blob: file,
+      bounds: { north: bounds.getNorth(), south: bounds.getSouth(), east: bounds.getEast(), west: bounds.getWest() },
+    }).catch(() => {});
+  }, [fieldImagePlacing, fieldImageCorners]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -421,6 +497,32 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
     setRulerPoints([]);
   }
 
+  function handlePickFieldImage(file: File) {
+    setPickerOpen(false);
+    setPlacingType(null);
+    setRulerOn(false);
+    setRulerPoints([]);
+    setFieldImageCorners([]);
+    setFieldImagePlacing(file);
+    onCloseOffline();
+  }
+
+  function handleCancelFieldImagePlacing() {
+    setFieldImagePlacing(null);
+    setFieldImageCorners([]);
+  }
+
+  function handleClearFieldImage() {
+    fieldImageOverlayRef.current?.remove();
+    fieldImageOverlayRef.current = null;
+    if (fieldImageUrlRef.current) {
+      URL.revokeObjectURL(fieldImageUrlRef.current);
+      fieldImageUrlRef.current = null;
+    }
+    setHasFieldImage(false);
+    clearFieldImage().catch(() => {});
+  }
+
   async function handleRemoveSelected() {
     if (!selectedMarkerKey) return;
     const marker = state.markers.get(selectedMarkerKey);
@@ -450,6 +552,18 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
             Toque no mapa pra marcar <strong>{placingVisual.label.toUpperCase()}</strong>
           </span>
           <button type="button" className="secondary" onClick={() => setPlacingType(null)}>
+            Cancelar
+          </button>
+        </div>
+      )}
+
+      {fieldImagePlacing && fieldImageCorners.length < 2 && (
+        <div className="marker-placing-hint">
+          <span>
+            Toque no mapa pra marcar o {fieldImageCorners.length === 0 ? "1º" : "2º"} canto da{" "}
+            <strong>FOTO DO CAMPO</strong>
+          </span>
+          <button type="button" className="secondary" onClick={handleCancelFieldImagePlacing}>
             Cancelar
           </button>
         </div>
@@ -517,6 +631,26 @@ export function MapView({ state, sendMarker, removeMarker, baseLayerId, gridEnab
             <button type="button" className="secondary" onClick={() => setPickerOpen(false)}>
               Cancelar
             </button>
+          </div>
+        </>
+      )}
+
+      {offlineOpen && (
+        <>
+          <div className="hud-drawer-backdrop" onClick={onCloseOffline} />
+          <div className="hud-drawer">
+            <div className="hud-drawer-header">
+              <h2 style={{ margin: 0 }}>Mapa offline</h2>
+              <button className="secondary" onClick={onCloseOffline}>
+                Fechar
+              </button>
+            </div>
+            <OfflineMapPanel
+              map={mapRef.current}
+              hasFieldImage={hasFieldImage}
+              onPickFieldImage={handlePickFieldImage}
+              onClearFieldImage={handleClearFieldImage}
+            />
           </div>
         </>
       )}

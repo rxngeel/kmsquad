@@ -337,6 +337,59 @@ body {
   top: 0;
 }
 
+.hud-icon-download {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 17px;
+}
+
+.hud-icon-download::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 9px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.hud-icon-download::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.hud-icon-download span {
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  bottom: 0;
+  height: 2px;
+  background: currentColor;
+}
+
+.offline-progress {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.offline-progress-bar {
+  height: 100%;
+  background: var(--volt);
+  transition: width 0.2s ease;
+}
+
 .hud-icon-layers span:last-child {
   top: 6px;
   opacity: 0.55;

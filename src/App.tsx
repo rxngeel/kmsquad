@@ -40,6 +40,7 @@ export default function App() {
   const [nodesOpen, setNodesOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
+  const [offlineOpen, setOfflineOpen] = useState(false);
   // Satélite é a visão que mostra o terreno de verdade (prédios, trilhas) —
   // pedido do Ran pra abrir já nela, em vez do Relevo (melhor pra
   // mata/elevação, mas menos reconhecível de cara).
@@ -97,6 +98,8 @@ export default function App() {
         removeMarker={removeMarker}
         baseLayerId={baseLayerId}
         gridEnabled={gridEnabled}
+        offlineOpen={offlineOpen}
+        onCloseOffline={() => setOfflineOpen(false)}
       />
       <div className="hud-self-badge">{ownLabel}</div>
 
@@ -133,6 +136,16 @@ export default function App() {
             title="Grade de referência"
           >
             <span className="hud-icon-grid" />
+          </button>
+          <button
+            className="hud-menu-btn"
+            onClick={() => setOfflineOpen(true)}
+            aria-label="Mapa offline"
+            title="Mapa offline (baixar área / foto do campo)"
+          >
+            <span className="hud-icon-download">
+              <span />
+            </span>
           </button>
           <div className="hud-layers-wrap">
             <button className="hud-menu-btn" onClick={() => setLayersOpen((v) => !v)} aria-label="Trocar camada do mapa" title="Camada do mapa">

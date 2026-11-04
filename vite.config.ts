@@ -38,6 +38,42 @@ export default defineConfig({
         // Os tiles de mapa vêm de hosts externos (OpenTopoMap/Esri/OSM) —
         // não precache, só o app shell (HTML/JS/CSS) local.
         globPatterns: ['**/*.{js,css,html,png,svg}'],
+        // Tiles de mapa: CacheFirst pra cada provedor, guardados sob demanda
+        // (o navegador cacheia o que já foi visto, e a tela "Mapa offline"
+        // dispara fetch() direto pra baixar uma área em lote — ver
+        // src/offline/tiles.ts). `cacheableResponse` com status 0 porque a
+        // resposta de tile vem "opaca" (sem cabeçalho CORS, fetch com
+        // `mode: "no-cors"`), e o Workbox precisa disso pra saber que pode
+        // guardar uma resposta opaca no cache.
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/[abc]\.tile\.opentopomap\.org\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'map-tiles-relevo',
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 6000 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/tile\.openstreetmap\.org\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'map-tiles-rua',
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 6000 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/server\.arcgisonline\.com\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'map-tiles-satelite',
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 6000 },
+            },
+          },
+        ],
       },
     }),
   ],
