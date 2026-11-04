@@ -156,7 +156,7 @@ export class MeshtasticConnection {
 
       device.events.onPositionPacket.subscribe((packet) => {
         const isSelf = packet.from === this.state.myNodeNum;
-        if (isSelf && isPhoneGpsMode(this.state.positionConfig?.gpsMode, this.state.ownUser?.hwModel)) {
+        if (isSelf && isPhoneGpsMode(this.state.positionConfig?.gpsMode)) {
           // Em modo celular, a posição de verdade é a que o app manda em
           // sendPhonePosition. O que o próprio rádio relata sobre si mesmo
           // aqui pode vir impreciso (ex.: canal reduzindo a precisão, ou o
@@ -494,8 +494,9 @@ export class MeshtasticConnection {
     this.log("Config LoRa (região/preset) atualizada.");
   }
 
-  /** Grava o intervalo de posição ("envio inteligente"), preservando o resto da config de posição atual. */
+  /** Grava fonte de GPS e/ou intervalo de posição ("envio inteligente"), preservando o resto da config de posição atual. */
   async setPositionSettings(patch: {
+    gpsMode?: Protobuf.Config.Config_PositionConfig_GpsMode;
     positionBroadcastSecs?: number;
     broadcastSmartMinimumDistance?: number;
     broadcastSmartMinimumIntervalSecs?: number;

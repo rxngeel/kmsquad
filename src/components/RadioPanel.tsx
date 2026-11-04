@@ -1,14 +1,7 @@
 import { useState } from "react";
 import { Protobuf } from "@meshtastic/core";
 import type { MeshState } from "../meshtastic/connection";
-import {
-  BRAZIL_REGION,
-  gpsConfigMismatch,
-  gpsModeLabel,
-  hwModelLabel,
-  presetLabel,
-  regionLabel,
-} from "../meshtastic/format";
+import { BRAZIL_REGION, gpsModeLabel, hwModelLabel, presetLabel, regionLabel } from "../meshtastic/format";
 
 interface Props {
   state: MeshState;
@@ -17,6 +10,7 @@ interface Props {
     modemPreset?: Protobuf.Config.Config_LoRaConfig_ModemPreset;
   }) => Promise<void>;
   setPositionSettings: (patch: {
+    gpsMode?: Protobuf.Config.Config_PositionConfig_GpsMode;
     positionBroadcastSecs?: number;
     broadcastSmartMinimumDistance?: number;
     broadcastSmartMinimumIntervalSecs?: number;
@@ -56,6 +50,7 @@ export function RadioPanel({ state, setLoraSettings, setPositionSettings }: Prop
   const [busyQuick, setBusyQuick] = useState<FieldType | null>(null);
   const [busyLora, setBusyLora] = useState(false);
   const [busyPosition, setBusyPosition] = useState(false);
+  const [busyGps, setBusyGps] = useState(false);
   const [error, setError] = useState<string>();
   const [info, setInfo] = useState<string>();
 
@@ -74,7 +69,7 @@ export function RadioPanel({ state, setLoraSettings, setPositionSettings }: Prop
   const position = state.positionConfig;
   const hwModel = state.ownUser?.hwModel;
   const regionOk = lora?.region === BRAZIL_REGION;
-  const gpsMismatch = gpsConfigMismatch(position?.gpsMode, hwModel);
+  const gpsEnabled = position?.gpsMode === Protobuf.Config.Config_PositionConfig_GpsMode.ENABLED;
 
   async function applyQuickSetup(field: FieldType) {
     setBusyQuick(field);
@@ -125,6 +120,20 @@ export function RadioPanel({ state, setLoraSettings, setPositionSettings }: Prop
     }
   }
 
+  async function setGpsSource(mode: Protobuf.Config.Config_PositionConfig_GpsMode) {
+    setBusyGps(true);
+    setError(undefined);
+    setInfo(undefined);
+    try {
+      await setPositionSettings({ gpsMode: mode });
+      setInfo(`Fonte de posição gravada: ${gpsModeLabel(mode)}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusyGps(false);
+    }
+  }
+
   async function savePositionSettings() {
     setBusyPosition(true);
     setError(undefined);
@@ -160,10 +169,7 @@ export function RadioPanel({ state, setLoraSettings, setPositionSettings }: Prop
       </div>
       <div className="row">
         <span className="label">Fonte de posição</span>
-        <span className="value">
-          {gpsModeLabel(position?.gpsMode, hwModel)}
-          {gpsMismatch && " ⚠"}
-        </span>
+        <span className="value">{gpsModeLabel(position?.gpsMode)}</span>
       </div>
       <div className="row">
         <span className="label">Modelo</span>
@@ -177,13 +183,29 @@ export function RadioPanel({ state, setLoraSettings, setPositionSettings }: Prop
           abaixo pra corrigir.
         </div>
       )}
-      {gpsMismatch && (
-        <div className="error-box">
-          A config diz que o GPS está ligado, mas o modelo {hwModelLabel(hwModel)}{" "}
-          não tem chip de GPS — o app está ignorando essa config e usando o
-          GPS do celular.
-        </div>
-      )}
+
+      <h3 style={{ marginTop: 16 }}>Fonte do GPS</h3>
+      <p style={{ color: "var(--text-dim)", fontSize: "0.85rem" }}>
+        Esse rádio tem um chip de GPS de verdade? Se o app não achar sua
+        posição no mapa, é bem provável que essa config esteja errada — toque
+        no botão certo abaixo pra corrigir.
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 10 }}>
+        <button
+          className={gpsEnabled ? "primary" : "secondary"}
+          disabled={busyGps}
+          onClick={() => setGpsSource(Protobuf.Config.Config_PositionConfig_GpsMode.ENABLED)}
+        >
+          Rádio tem GPS
+        </button>
+        <button
+          className={!gpsEnabled ? "primary" : "secondary"}
+          disabled={busyGps}
+          onClick={() => setGpsSource(Protobuf.Config.Config_PositionConfig_GpsMode.DISABLED)}
+        >
+          Sem GPS, uso o do celular
+        </button>
+      </div>
 
       <h3 style={{ marginTop: 16 }}>Configuração rápida</h3>
       <p style={{ color: "var(--text-dim)", fontSize: "0.85rem" }}>

@@ -70,7 +70,10 @@ export function MapView({ state, sendMarker, removeMarker }: Props) {
   const pinsRef = useRef(new Map<string, L.Marker>());
   const hasCenteredRef = useRef(false);
   const baseLayerRef = useRef<L.TileLayer | null>(null);
-  const [baseLayerId, setBaseLayerId] = useState<BaseLayerId>("relevo");
+  // Satélite é a visão que mostra o terreno de verdade (prédios, trilhas) —
+  // pedido do Ran pra abrir já nela, em vez do Relevo (que é melhor pra
+  // mata/elevação, mas menos reconhecível de cara).
+  const [baseLayerId, setBaseLayerId] = useState<BaseLayerId>("satelite");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [placingType, setPlacingType] = useState<MarkerTypeValue | null>(null);
   const [selectedMarkerKey, setSelectedMarkerKey] = useState<string | null>(null);
@@ -78,12 +81,42 @@ export function MapView({ state, sendMarker, removeMarker }: Props) {
   placingTypeRef.current = placingType;
   const sendMarkerRef = useRef(sendMarker);
   sendMarkerRef.current = sendMarker;
+  const recenterRef = useRef<() => void>(() => {});
+  recenterRef.current = () => {
+    const map = mapRef.current;
+    const pos = state.myNodeNum !== undefined ? state.nodes.get(state.myNodeNum)?.position : undefined;
+    if (!map || !pos?.latitudeI || !pos?.longitudeI) return;
+    map.setView([pos.latitudeI / 1e7, pos.longitudeI / 1e7], map.getZoom());
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
     // zoomControl no canto inferior esquerdo: o canto superior fica ocupado
     // pela barra do HUD (status da conexão, relógio, menu).
     const map = L.map(containerRef.current, { zoomControl: false, maxZoom: 21 }).setView(DEFAULT_CENTER, 16);
+
+    // Botão de centralizar na própria posição — fica acima do +/- de zoom
+    // (mesmo canto), estilo "locate" do ATAK.
+    const LocateControl = L.Control.extend({
+      options: { position: "bottomleft" as const },
+      onAdd() {
+        const container = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+        const link = L.DomUtil.create("a", "map-locate-btn", container);
+        link.href = "#";
+        link.title = "Centralizar na minha posição";
+        link.setAttribute("aria-label", "Centralizar na minha posição");
+        link.setAttribute("role", "button");
+        link.innerHTML = "◎";
+        L.DomEvent.disableClickPropagation(container);
+        L.DomEvent.on(link, "click", (e: Event) => {
+          L.DomEvent.preventDefault(e);
+          recenterRef.current();
+        });
+        return container;
+      },
+    });
+    new LocateControl().addTo(map);
+
     L.control.zoom({ position: "bottomleft" }).addTo(map);
 
     // Atribuição é exigência de licença dos provedores de tile (OSM/OpenTopoMap/

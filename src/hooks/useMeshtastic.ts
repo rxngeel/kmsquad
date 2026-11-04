@@ -23,6 +23,7 @@ export function useMeshtastic() {
       modemPreset?: Protobuf.Config.Config_LoRaConfig_ModemPreset;
     }) => connection.setLoraSettings(patch),
     setPositionSettings: (patch: {
+      gpsMode?: Protobuf.Config.Config_PositionConfig_GpsMode;
       positionBroadcastSecs?: number;
       broadcastSmartMinimumDistance?: number;
       broadcastSmartMinimumIntervalSecs?: number;

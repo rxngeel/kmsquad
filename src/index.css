@@ -125,6 +125,67 @@ body {
   color: #0a0a0a;
 }
 
+.hud-nodes-btn {
+  width: auto;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+  background: rgba(10, 10, 10, 0.75);
+  border-color: var(--line);
+  color: var(--volt);
+}
+
+/* Bússola: canto superior esquerdo, estilo dial — um triângulo que gira de
+   verdade com a direção do sensor quando ativa (ver useCompass). */
+.hud-compass-btn {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  clip-path: none;
+  background: rgba(10, 10, 10, 0.75);
+  border-color: var(--line);
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hud-compass-btn--active {
+  border-color: var(--volt);
+  color: var(--volt);
+}
+
+.hud-compass-needle {
+  display: inline-block;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: transform 0.15s linear;
+}
+
+.hud-self-badge {
+  position: absolute;
+  z-index: 1000;
+  left: calc(14px + env(safe-area-inset-left, 0px));
+  /* acima de todo o conjunto de controles do Leaflet nesse canto (locate +
+     zoom, 2 barras empilhadas) — ver .leaflet-bottom.leaflet-left. */
+  bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--volt);
+  color: #0a0a0a;
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg);
+  pointer-events: none;
+}
+
 .hud-compass-error {
   position: absolute;
   z-index: 1000;
@@ -175,19 +236,51 @@ body {
   padding: 6px 14px;
 }
 
-.menu-section-label {
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.75rem;
-  font-weight: 700;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 6px;
-  margin: 18px 0 10px;
+.menu-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.menu-section-label:first-of-type {
-  margin-top: 0;
+.menu-category-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 16px 18px;
+  background: var(--bg-panel);
+  border-color: var(--line);
+  border-left: 3px solid var(--volt);
+  color: var(--text);
+}
+
+.menu-category-title {
+  display: block;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 1rem;
+  color: var(--volt);
+}
+
+.menu-category-sub {
+  display: block;
+  color: var(--text-dim);
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  font-size: 0.8rem;
+  margin-top: 3px;
+}
+
+.menu-category-chevron {
+  color: var(--volt);
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-left: 12px;
+  flex-shrink: 0;
 }
 
 h1, h2, h3, h4 {
@@ -401,6 +494,36 @@ select {
 .leaflet-bottom.leaflet-left {
   margin-left: calc(10px + env(safe-area-inset-left, 0px));
   margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Leaflet desenha os controles (zoom, locate) em branco por padrão — troca
+   pro visual escuro/VOLT do resto do app. */
+.leaflet-bar {
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+
+.leaflet-bar a {
+  background: rgba(10, 10, 10, 0.85) !important;
+  color: var(--volt) !important;
+  border-bottom: 1px solid var(--line) !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 1.1rem;
+}
+
+.leaflet-bar a:last-child {
+  border-bottom: none !important;
+}
+
+.leaflet-bar a.leaflet-disabled {
+  background: rgba(10, 10, 10, 0.5) !important;
+  color: var(--text-dim) !important;
+}
+
+.map-locate-btn {
+  font-size: 1rem !important;
 }
 
 .leaflet-bottom.leaflet-right {

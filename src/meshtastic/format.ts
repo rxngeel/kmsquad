@@ -75,58 +75,37 @@ export function presetLabel(preset: Protobuf.Config.Config_LoRaConfig_ModemPrese
   return name ? name.replaceAll("_", " ") : String(preset);
 }
 
-// gpsMode é uma flag de configuração do rádio, não uma leitura do hardware:
-// um V3 (sem chip de GPS) pode estar com gpsMode = ENABLED por engano (ex.:
-// config antiga ou copiada de outro rádio) e isso não vira GPS de verdade.
-// Para os modelos abaixo sabemos que não existe chip de GPS físico, então a
-// config é ignorada e o app usa o GPS do celular mesmo assim.
-const HW_MODELS_WITHOUT_GPS = new Set<Protobuf.Mesh.HardwareModel>([
-  Protobuf.Mesh.HardwareModel.HELTEC_V3,
-]);
-
+// Tentamos antes decidir "este rádio tem GPS" pelo `hwModel` (nome da
+// placa) — mas o Heltec V3 (sem GPS) e o V4 (com GPS, um chip a mais na
+// mesma placa) reportam o MESMO `hwModel` (não existe "HELTEC_V4" no
+// firmware Meshtastic, só "HELTEC_V3" pras duas versões). Isso fazia o app
+// tratar o V4 como se não tivesse GPS e descartar a posição real que ele
+// mandava — bug relatado pelo Ran ("módulo V4 não aparece a localização").
+// Corrigido: confiamos só no `gpsMode` que o próprio rádio relata (é o que
+// o firmware sabe de verdade sobre o GPS dele), e o app deixa gravar esse
+// campo direto (`setPositionSettings` com `gpsMode`) pra corrigir um rádio
+// relatando errado — em vez de tentar adivinhar pelo modelo da placa.
 export function hwModelLabel(hwModel: Protobuf.Mesh.HardwareModel | undefined): string {
   if (hwModel === undefined) return "—";
   const name = Protobuf.Mesh.HardwareModel[hwModel];
   return name ? name.replaceAll("_", " ") : String(hwModel);
 }
 
-export function gpsModeLabel(
-  mode: Protobuf.Config.Config_PositionConfig_GpsMode | undefined,
-  hwModel: Protobuf.Mesh.HardwareModel | undefined,
-): string {
-  if (hwModel !== undefined && HW_MODELS_WITHOUT_GPS.has(hwModel)) {
-    return "RÁDIO SEM GPS (modo V3 — usa o GPS do celular)";
-  }
+export function gpsModeLabel(mode: Protobuf.Config.Config_PositionConfig_GpsMode | undefined): string {
   switch (mode) {
     case Protobuf.Config.Config_PositionConfig_GpsMode.ENABLED:
-      return "GPS DO RÁDIO ATIVO (modo V4)";
+      return "GPS DO RÁDIO ATIVO";
     case Protobuf.Config.Config_PositionConfig_GpsMode.DISABLED:
-      return "GPS DO RÁDIO DESATIVADO (modo V3 — usa o GPS do celular)";
+      return "GPS DO RÁDIO DESATIVADO (usa o GPS do celular)";
     case Protobuf.Config.Config_PositionConfig_GpsMode.NOT_PRESENT:
-      return "RÁDIO SEM GPS (modo V3 — usa o GPS do celular)";
+      return "RÁDIO SEM GPS (usa o GPS do celular)";
     default:
-      return "DESCONHECIDO";
+      return "DESCONHECIDO (confira em Configurações → Rádio)";
   }
 }
 
-export function isPhoneGpsMode(
-  mode: Protobuf.Config.Config_PositionConfig_GpsMode | undefined,
-  hwModel: Protobuf.Mesh.HardwareModel | undefined,
-): boolean {
-  if (hwModel !== undefined && HW_MODELS_WITHOUT_GPS.has(hwModel)) return true;
+export function isPhoneGpsMode(mode: Protobuf.Config.Config_PositionConfig_GpsMode | undefined): boolean {
   return mode !== Protobuf.Config.Config_PositionConfig_GpsMode.ENABLED;
-}
-
-/** A config do rádio diz que o GPS está ligado, mas este modelo não tem GPS físico. */
-export function gpsConfigMismatch(
-  mode: Protobuf.Config.Config_PositionConfig_GpsMode | undefined,
-  hwModel: Protobuf.Mesh.HardwareModel | undefined,
-): boolean {
-  return (
-    hwModel !== undefined &&
-    HW_MODELS_WITHOUT_GPS.has(hwModel) &&
-    mode === Protobuf.Config.Config_PositionConfig_GpsMode.ENABLED
-  );
 }
 
 /**

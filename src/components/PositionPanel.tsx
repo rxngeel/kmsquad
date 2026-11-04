@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { MeshState } from "../meshtastic/connection";
-import { gpsConfigMismatch, isPhoneGpsMode } from "../meshtastic/format";
+import { isPhoneGpsMode } from "../meshtastic/format";
 
 interface Props {
   state: MeshState;
@@ -15,8 +15,7 @@ export function PositionPanel({ state, sendPhonePosition }: Props) {
   const watchIdRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
-  const phoneMode = isPhoneGpsMode(state.positionConfig?.gpsMode, state.ownUser?.hwModel);
-  const gpsMismatch = gpsConfigMismatch(state.positionConfig?.gpsMode, state.ownUser?.hwModel);
+  const phoneMode = isPhoneGpsMode(state.positionConfig?.gpsMode);
 
   useEffect(() => {
     return () => stop();
@@ -68,8 +67,8 @@ export function PositionPanel({ state, sendPhonePosition }: Props) {
       <div className="panel">
         <h2>Posição</h2>
         <p style={{ color: "var(--text-dim)", fontSize: "0.9rem" }}>
-          Este rádio está em modo V4 (GPS próprio ligado). Não é preciso
-          enviar a posição do celular — deixe o rádio no bolso.
+          Este rádio está com o GPS próprio ligado. Não é preciso enviar a
+          posição do celular — deixe o rádio no bolso.
         </p>
       </div>
     );
@@ -77,17 +76,11 @@ export function PositionPanel({ state, sendPhonePosition }: Props) {
 
   return (
     <div className="panel">
-      <h2>Posição (modo V3)</h2>
+      <h2>Posição (GPS do celular)</h2>
       <p style={{ color: "var(--text-dim)", fontSize: "0.9rem" }}>
         Este rádio não tem GPS próprio ativo. Mantenha esta página aberta e a
         tela acesa para enviar sua posição.
       </p>
-      {gpsMismatch && (
-        <div className="error-box">
-          A config do rádio diz GPS ligado, mas esse modelo não tem GPS
-          próprio — por isso o app está usando o GPS do celular mesmo assim.
-        </div>
-      )}
       {gpsError && <div className="error-box">{gpsError}</div>}
       {accuracy !== undefined && accuracy > 300 && (
         <div className="error-box">

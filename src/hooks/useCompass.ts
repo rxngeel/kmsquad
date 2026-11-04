@@ -21,6 +21,10 @@ interface Options {
 export function useCompass({ onHeading, throttleMs = 2000 }: Options) {
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<string>();
+  // heading "ao vivo", pro ponteiro da bússola na tela — atualiza a cada
+  // evento, sem o throttle (que existe só pra economizar airtime no envio
+  // pro squad, não faz sentido pro desenho local).
+  const [heading, setHeading] = useState<number>();
   const lastSentRef = useRef(0);
   const onHeadingRef = useRef(onHeading);
   onHeadingRef.current = onHeading;
@@ -30,18 +34,19 @@ export function useCompass({ onHeading, throttleMs = 2000 }: Options) {
     lastSentRef.current = 0; // "ainda não recebi nenhum heading" nesta ativação
 
     function handleOrientation(event: WebkitOrientationEvent) {
-      let heading: number | undefined;
+      let newHeading: number | undefined;
       if (typeof event.webkitCompassHeading === "number") {
-        heading = event.webkitCompassHeading;
+        newHeading = event.webkitCompassHeading;
       } else if (event.absolute && event.alpha !== null) {
-        heading = (360 - event.alpha) % 360;
+        newHeading = (360 - event.alpha) % 360;
       }
-      if (heading === undefined) return;
+      if (newHeading === undefined) return;
+      setHeading(newHeading);
 
       const now = Date.now();
       if (now - lastSentRef.current >= throttleMs) {
         lastSentRef.current = now;
-        onHeadingRef.current(heading);
+        onHeadingRef.current(newHeading);
       }
     }
 
@@ -59,6 +64,7 @@ export function useCompass({ onHeading, throttleMs = 2000 }: Options) {
           "Não recebi dados do sensor de bússola. Verifique em Ajustes do iPhone → Privacidade e Segurança → Movimento e Fitness se o Bluefy tem permissão. Se já tiver e continuar assim, esse navegador não dá acesso à bússola.",
         );
         setEnabled(false);
+        setHeading(undefined);
       }
     }, 4000);
 
@@ -71,6 +77,7 @@ export function useCompass({ onHeading, throttleMs = 2000 }: Options) {
   async function toggle() {
     if (enabled) {
       setEnabled(false);
+      setHeading(undefined);
       return;
     }
     setError(undefined);
@@ -93,5 +100,5 @@ export function useCompass({ onHeading, throttleMs = 2000 }: Options) {
     }
   }
 
-  return { enabled, error, toggle };
+  return { enabled, error, heading, toggle };
 }
