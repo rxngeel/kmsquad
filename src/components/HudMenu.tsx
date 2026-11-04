@@ -26,23 +26,23 @@ interface Props {
   setIdentity: (longName: string, shortName: string) => Promise<void>;
 }
 
-type Section = "usuario" | "radio" | "squad" | "status" | null;
+type Section = "ktak" | "radio" | "status" | null;
 
 const SECTION_TITLE: Record<Exclude<Section, null>, string> = {
-  usuario: "Setup usuário",
+  ktak: "Setup K-TAK",
   radio: "Configurações de rádio",
-  squad: "Setup K-TAK",
   status: "Status & ferramentas",
 };
 
 /**
  * Menu lateral do HUD, em 2 níveis: a raiz só lista categorias (poucas
  * opções, fácil de escanear); cada categoria abre num sub-menu próprio com
- * "Voltar". Rádio vem antes de Squad na raiz mesmo "K-TAK" sendo citado
- * primeiro por nome, porque criar um squad grava a config LoRa atual no
- * link que sai pros outros jogadores — o rádio precisa estar certo ANTES
- * (ver docs/decisoes.md). Nós vistos e mensagens têm botão próprio na barra
- * de cima (olhados com frequência durante o jogo) — não duplicados aqui.
+ * "Voltar". "Setup usuário" e "Setup K-TAK" (squad) viraram uma categoria
+ * só ("Setup K-TAK": identidade + squad), mas Rádio continua vindo ANTES
+ * dela na raiz — criar um squad grava a config LoRa atual no link que sai
+ * pros outros jogadores, então o rádio precisa estar certo antes (ver
+ * docs/decisoes.md). Nós vistos e mensagens têm botão próprio na barra de
+ * cima (olhados com frequência durante o jogo) — não duplicados aqui.
  */
 export function HudMenu({
   state,
@@ -70,13 +70,6 @@ export function HudMenu({
 
         {section === null && (
           <div className="menu-category-list">
-            <button className="menu-category-btn" onClick={() => setSection("usuario")}>
-              <span>
-                <span className="menu-category-title">Setup usuário</span>
-                <span className="menu-category-sub">Nome e numeral/callsign</span>
-              </span>
-              <span className="menu-category-chevron">›</span>
-            </button>
             <button className="menu-category-btn" onClick={() => setSection("radio")}>
               <span>
                 <span className="menu-category-title">Configurações de rádio</span>
@@ -84,10 +77,10 @@ export function HudMenu({
               </span>
               <span className="menu-category-chevron">›</span>
             </button>
-            <button className="menu-category-btn" onClick={() => setSection("squad")}>
+            <button className="menu-category-btn" onClick={() => setSection("ktak")}>
               <span>
                 <span className="menu-category-title">Setup K-TAK</span>
-                <span className="menu-category-sub">Criar ou entrar num squad</span>
+                <span className="menu-category-sub">Nome, callsign, criar/entrar em squad</span>
               </span>
               <span className="menu-category-chevron">›</span>
             </button>
@@ -101,13 +94,16 @@ export function HudMenu({
           </div>
         )}
 
-        {section === "usuario" && <IdentityPanel state={state} setIdentity={setIdentity} />}
-
         {section === "radio" && (
           <RadioPanel state={state} setLoraSettings={setLoraSettings} setPositionSettings={setPositionSettings} />
         )}
 
-        {section === "squad" && <SquadPanel state={state} createSquad={createSquad} joinSquad={joinSquad} />}
+        {section === "ktak" && (
+          <>
+            <IdentityPanel state={state} setIdentity={setIdentity} />
+            <SquadPanel state={state} createSquad={createSquad} joinSquad={joinSquad} />
+          </>
+        )}
 
         {section === "status" && (
           <>
