@@ -21,8 +21,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'K-TAK',
-        short_name: 'K-TAK',
+        name: 'KM-TAK',
+        short_name: 'KM-TAK',
         description: 'Rastreamento de squad para airsoft via rádios Meshtastic',
         theme_color: '#0a0a0a',
         background_color: '#0a0a0a',

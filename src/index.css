@@ -68,9 +68,9 @@ body {
 }
 
 .connect-logo {
-  font-size: 2.2rem;
-  margin: 0;
-  line-height: 1;
+  width: 220px;
+  height: auto;
+  color: var(--volt);
 }
 
 .connect-tagline {
@@ -128,9 +128,9 @@ body {
   justify-content: center;
 }
 
-.connect-radar-core span {
-  font-size: 2.4rem;
-  font-weight: 800;
+.connect-eagle {
+  width: 46px;
+  height: auto;
   color: var(--volt);
 }
 
@@ -193,8 +193,11 @@ body {
     width: 58px;
     height: 58px;
   }
-  .connect-radar-core span {
-    font-size: 1.6rem;
+  .connect-eagle {
+    width: 28px;
+  }
+  .connect-logo {
+    width: 170px;
   }
   .connect-hint {
     margin-top: 10px;

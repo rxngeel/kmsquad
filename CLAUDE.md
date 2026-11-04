@@ -1,8 +1,8 @@
-# K-TAK
+# KM-TAK
 
 Rastreamento de squad para airsoft, inspirado no ATAK, rodando sobre rádios Meshtastic (Heltec LoRa32 V3/V4) e com foco em iPhone. Web app (PWA), sem custo de infraestrutura.
 
-Nome do projeto era KMSQUAD; renomeado pra K-TAK em 2026-11-03 (só o nome visível — repositório/link do GitHub Pages continuam "kmsquad" por enquanto, pra não quebrar o que já foi testado).
+Nome do projeto era KMSQUAD; renomeado pra K-TAK em 2026-11-03, e pra KM-TAK em 2026-11-04 (o Ran trouxe o logo — águia + logotipo "KMTAK" — e pediu esse nome; ver `src/components/Brand.tsx`). Só o nome/marca visível muda — repositório/link do GitHub Pages continuam "kmsquad" por enquanto, pra não quebrar o que já foi testado.
 
 ## Sobre o dono do projeto
 

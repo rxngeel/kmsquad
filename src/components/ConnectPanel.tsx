@@ -1,4 +1,5 @@
 import type { MeshState } from "../meshtastic/connection";
+import { EagleIcon } from "./Brand";
 
 interface Props {
   state: MeshState;
@@ -22,7 +23,7 @@ export function ConnectPanel({ state, onConnect }: Props) {
         <div className="connect-radar-ring connect-radar-ring--outer" />
         <div className="connect-radar-ring connect-radar-ring--inner" />
         <div className="connect-radar-core">
-          <span>K</span>
+          <EagleIcon className="connect-eagle" />
         </div>
       </div>
 

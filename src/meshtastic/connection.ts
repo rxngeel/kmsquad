@@ -252,7 +252,7 @@ export class MeshtasticConnection {
         this.log(`[rádio] ${record.message}`);
       });
 
-      // Status/marcador/direção do K-TAK viajam na porta privada do
+      // Status/marcador/direção do KM-TAK viajam na porta privada do
       // Meshtastic, fora dos eventos "de fábrica" acima — ver docs/protocolo.md.
       device.events.onMeshPacket.subscribe((packet) => {
         if (packet.payloadVariant.case !== "decoded") return;

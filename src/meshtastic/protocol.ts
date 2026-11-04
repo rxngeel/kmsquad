@@ -1,4 +1,4 @@
-// Protocolo binário do K-TAK — ver docs/protocolo.md pro formato completo
+// Protocolo binário do KM-TAK — ver docs/protocolo.md pro formato completo
 // e o porquê de cada escolha. Implementação deve bater exatamente com o doc.
 
 export const PROTOCOL_VERSION = 1;

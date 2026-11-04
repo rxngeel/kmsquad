@@ -29,7 +29,7 @@ interface Props {
 type Section = "ktak" | "radio" | "status" | null;
 
 const SECTION_TITLE: Record<Exclude<Section, null>, string> = {
-  ktak: "Setup K-TAK",
+  ktak: "Setup KM-TAK",
   radio: "Configurações de rádio",
   status: "Status & ferramentas",
 };
@@ -37,8 +37,8 @@ const SECTION_TITLE: Record<Exclude<Section, null>, string> = {
 /**
  * Menu lateral do HUD, em 2 níveis: a raiz só lista categorias (poucas
  * opções, fácil de escanear); cada categoria abre num sub-menu próprio com
- * "Voltar". "Setup usuário" e "Setup K-TAK" (squad) viraram uma categoria
- * só ("Setup K-TAK": identidade + squad), mas Rádio continua vindo ANTES
+ * "Voltar". "Setup usuário" e "Setup KM-TAK" (squad) viraram uma categoria
+ * só ("Setup KM-TAK": identidade + squad), mas Rádio continua vindo ANTES
  * dela na raiz — criar um squad grava a config LoRa atual no link que sai
  * pros outros jogadores, então o rádio precisa estar certo antes (ver
  * docs/decisoes.md). Nós vistos e mensagens têm botão próprio na barra de
@@ -79,7 +79,7 @@ export function HudMenu({
             </button>
             <button className="menu-category-btn" onClick={() => setSection("ktak")}>
               <span>
-                <span className="menu-category-title">Setup K-TAK</span>
+                <span className="menu-category-title">Setup KM-TAK</span>
                 <span className="menu-category-sub">Nome, callsign, criar/entrar em squad</span>
               </span>
               <span className="menu-category-chevron">›</span>

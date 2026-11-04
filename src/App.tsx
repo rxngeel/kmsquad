@@ -7,6 +7,7 @@ import { HudMenu } from "./components/HudMenu";
 import { DebugScreen } from "./components/DebugScreen";
 import { NodeListPanel } from "./components/NodeListPanel";
 import { ChatPanel } from "./components/ChatPanel";
+import { KmtakWordmark } from "./components/Brand";
 import type { MeshState } from "./meshtastic/connection";
 import { labelFor } from "./meshtastic/format";
 
@@ -73,14 +74,12 @@ export default function App() {
     return (
       <div className="connect-screen">
         <div className="connect-hero">
-          <h1 className="connect-logo">
-            K<span style={{ color: "var(--volt)" }}>-TAK</span>
-          </h1>
+          <KmtakWordmark className="connect-logo" />
           <p className="connect-tagline">RASTREAMENTO TÁTICO DE SQUAD</p>
         </div>
         <ConnectPanel state={state} onConnect={connect} />
         <div className="footer-tap" onClick={handleFooterTap}>
-          K-TAK · toque 5x para abrir o debug
+          KM-TAK · toque 5x para abrir o debug
         </div>
       </div>
     );
